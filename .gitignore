@@ -1,0 +1,14 @@
+.idea
+**/.ipynb_checkpoints
+**/**/.ipynb_checkpoints
+notebooks
+**/**/.DS_Store
+wandb
+**/**/__pycache__
+data/json_feat_2.1.0
+data/full_2.1.0
+.python-version
+exp
+logs
+results
+.vscode

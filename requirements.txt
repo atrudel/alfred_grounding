@@ -9,12 +9,8 @@ revtok
 Pillow
 tensorboardX==1.8
 ai2thor==2.1.0
-wandb
 transformers
 sentencepiece
 tensorboard
 pyyaml
 
-## Install with conda first
-torch
-torchvision

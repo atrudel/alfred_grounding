@@ -16,5 +16,5 @@ tensorboard
 pyyaml
 
 ## Install with conda first
-# torch
-# torchvision
+torch
+torchvision

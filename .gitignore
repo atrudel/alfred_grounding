@@ -5,10 +5,12 @@ notebooks
 **/**/.DS_Store
 wandb
 **/**/__pycache__
-data/json_feat_2.1.0
-data/full_2.1.0
+alfred/data/json_feat_2.1.0
+alfred/data/full_2.1.0
 .python-version
 exp
 logs
 results
 .vscode
+**/*.egg-info
+build

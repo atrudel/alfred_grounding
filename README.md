@@ -12,5 +12,16 @@ Language grounding experiments on the Alfred dataset
    ```
    
 ## Training
+1. Preprocess the data
+   ```bash
+   python grounding/data_processing/preprocess_data.py
+    ```
+2. Launch training
+   ```bash
+   python grounding/training/train.py --name experiment_name
+   ```
 
 ## Evaluation
+   ```bash
+   python grounding/evaluation/evaluate_objection.py
+   ```

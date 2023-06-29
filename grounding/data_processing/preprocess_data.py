@@ -49,6 +49,5 @@ def preprocess_split_in_high_level_actions(path: str, trajectory_ids: List[dict]
 
 
 
-
 if __name__ == '__main__':
     preprocess_all_data()

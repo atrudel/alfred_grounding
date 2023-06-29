@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from typing import Optional, List
 
 from torch import Tensor
@@ -52,6 +53,17 @@ class Action:
         return [self._make_templated_string(self.type, [object_name] + self.args[1:])
                 for object_name in object_names]
 
+    def make_substitution(self, substitution_word: str) -> Action:
+        new_action: Action = copy.copy(self)
+        new_action.instruction = self.instruction.replace(
+            self.target_object.templated_string_form,
+            substitution_word
+        )
+        if new_action.instruction == self.instruction:
+            raise UnaccomplishedSubstitutionException(
+                f"No occurrences of {self.target_object.templated_string_form} in {self.instruction}"
+            )
+        return new_action
 
     def assign_id(self, id: int) -> Action:
         self.id = id
@@ -62,3 +74,11 @@ class Action:
 
     def __repr__(self) -> str:
         return self.__str__()
+
+
+class UnaccomplishedSubstitutionException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return f"UnaccomplishedSubstitutionException: {self.message}"

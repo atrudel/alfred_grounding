@@ -11,7 +11,7 @@ from tqdm import tqdm
 from transformers import BatchEncoding
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
-from grounding.data_processing.action import Action
+from grounding.data_processing.action import Action, UnaccomplishedSubstitutionException
 from grounding.data_processing.datasets import EvalAlfredHLActionDataset
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
@@ -22,43 +22,45 @@ parser.add_argument('--model_dir', type=str, help='Directory where the model che
 
 
 
+
 def compute_object_accuracy_for_same_action_type(model: ImageConditionedLLMOnDecoder, actions: List[Action]):
     accuracies = []
     for action in tqdm(actions):
-        candidate_output_texts: List[str] = action.make_classification_strings()
-        n_candidates = len(candidate_output_texts)
-
-        input_tokenized: BatchEncoding = model.tokenizer(
-            [action.instruction] * n_candidates,
-            return_tensors='pt'
-        )
-        image_features: Tensor = action.image_features.unsqueeze(0).repeat(n_candidates, 1, 1)
-
-        decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_image_and_output_data(
-            image_features, candidate_output_texts
-        )
-        with torch.no_grad():
-            output: Seq2SeqLMOutput = model.train_forward(
-                input_token_ids=input_tokenized['input_ids'].to(device),
-                input_att_mask=input_tokenized['attention_mask'].to(device),
-                decoder_input_token_ids=decoder_input_toks.to(device),
-                decoder_input_att_mask=decoder_input_att_mask.to(device),
-                image_features=decoder_image_features.to(device),
-                output_token_ids=output_toks.to(device)
-            )
-        logits: Tensor = output.logits
-        loss_fn = nn.CrossEntropyLoss().to(device)
-        losses: Tensor = torch.zeros(n_candidates)
-
-        for i in range(n_candidates):
-            target: Tensor = output_toks[i].to(device)
-            loss = loss_fn(logits[i], target)
-            losses[i] = loss
-
-        accuracy = float((losses.argmin().item() == action.target_object.index))
+        accuracy = compute_object_accuracy_for_action(action, model)
         accuracies.append(accuracy)
 
     return np.array(accuracies).mean()
+
+
+def compute_object_accuracy_for_action(action, model):
+    candidate_output_texts: List[str] = action.make_classification_strings()
+    n_candidates = len(candidate_output_texts)
+    input_tokenized: BatchEncoding = model.tokenizer(
+        [action.instruction] * n_candidates,
+        return_tensors='pt'
+    )
+    image_features: Tensor = action.image_features.unsqueeze(0).repeat(n_candidates, 1, 1)
+    decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_image_and_output_data(
+        image_features, candidate_output_texts
+    )
+    with torch.no_grad():
+        output: Seq2SeqLMOutput = model.train_forward(
+            input_token_ids=input_tokenized['input_ids'].to(device),
+            input_att_mask=input_tokenized['attention_mask'].to(device),
+            decoder_input_token_ids=decoder_input_toks.to(device),
+            decoder_input_att_mask=decoder_input_att_mask.to(device),
+            image_features=decoder_image_features.to(device),
+            output_token_ids=output_toks.to(device)
+        )
+    logits: Tensor = output.logits
+    loss_fn = nn.CrossEntropyLoss().to(device)
+    losses: Tensor = torch.zeros(n_candidates)
+    for i in range(n_candidates):
+        target: Tensor = output_toks[i].to(device)
+        loss = loss_fn(logits[i], target)
+        losses[i] = loss
+    accuracy = float((losses.argmin().item() == action.target_object.index))
+    return accuracy
 
 
 def evaluate_object_selection_by_action_type(model: ImageConditionedLLMOnDecoder,
@@ -85,6 +87,29 @@ def evaluate_object_selection_by_action_type(model: ImageConditionedLLMOnDecoder
     return results
 
 
+def evaluate_object_substitution_by_object(model: ImageConditionedLLMOnDecoder,
+                                           actions: List[Action],
+                                           substitutions: dict) -> Dict[str, float]:
+    subst_types = ['no_modif', 'sibling', 'generic', 'description', 'unrelated']
+    accuracies = {subst_type: [] for subst_type in subst_types}
+    for action in tqdm(actions):
+        for subst_type in subst_types:
+            try:
+                if subst_type == 'no_modif':
+                    subst_action = action
+                else:
+                    subst_action = action.make_substitution(substitutions[subst_type])
+                accuracy = compute_object_accuracy_for_action(subst_action, model)
+                accuracies[subst_type].append(accuracy)
+            except UnaccomplishedSubstitutionException as e:
+                print(f"Skipping example: {e}")
+    for key in subst_types:
+        accuracies[key] = np.array(accuracies[key]).mean()
+    return accuracies
+
+
+
+
 
 
 
@@ -99,13 +124,36 @@ if __name__ == '__main__':
     valid_seen_dataset = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen')
     valid_unseen_dataset = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen')
 
-    train_accuracies: dict = evaluate_object_selection_by_action_type(model, train_dataset)
-    valid_seen_accuracies: dict = evaluate_object_selection_by_action_type(model, valid_seen_dataset)
-    valid_unseen_accuracies: dict = evaluate_object_selection_by_action_type(model, valid_unseen_dataset)
+    # # train_accuracies: dict = evaluate_object_selection_by_action_type(model, train_dataset)
+    # valid_seen_accuracies: dict = evaluate_object_selection_by_action_type(model, valid_seen_dataset)
+    # valid_unseen_accuracies: dict = evaluate_object_selection_by_action_type(model, valid_unseen_dataset)
+    #
+    # results_df = pd.DataFrame({
+    #     # 'train_accuracy': train_accuracies,
+    #     'valid_seen_accuracy': valid_seen_accuracies,
+    #     'valid_unseen_accuracy': valid_unseen_accuracies,
+    # })
+    # results_df.to_csv(model_dir / "object_selection_by_action_type.csv")
 
-    results_df = pd.DataFrame({
-        'train_accuracy': train_accuracies,
-        'valid_seen_accuracy': valid_seen_accuracies,
-        'valid_unseen_accuracy': valid_unseen_accuracies,
+    substitutions = {
+        'no_modif': 'fork',
+        'sibling': 'knife',
+        'generic': 'utensil',
+        'description': 'metal object',
+        'unrelated': 'baseball'
+    }
+
+    train_forks = train_dataset.get_actions_by_objects()['fork']
+    valid_seen_forks = valid_seen_dataset.get_actions_by_objects()['fork']
+    valid_unseen_forks = valid_unseen_dataset.get_actions_by_objects()['fork']
+
+    train_acc = evaluate_object_substitution_by_object(model, train_forks, substitutions)
+    valid_seen_acc = evaluate_object_substitution_by_object(model, valid_seen_forks, substitutions)
+    valid_unseen_acc = evaluate_object_substitution_by_object(model, valid_unseen_forks, substitutions)
+
+    result_df = pd.DataFrame({
+        'train': train_acc,
+        'valid_seen_acc': valid_seen_acc,
+        'valid_unseen_acc': valid_unseen_acc
     })
-    results_df.to_csv(model_dir / "object_selection_by_action_type.csv")
+    result_df.to_csv(model_dir / "fork_substitutions.csv")

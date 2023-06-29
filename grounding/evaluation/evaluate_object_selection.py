@@ -66,6 +66,8 @@ def evaluate_object_selection_by_action_type(model: ImageConditionedLLMOnDecoder
     # Todo: implement the PutObject actions with two arguments
     selected_action_types: List[str] = [
         'PickupObject',
+        #'OpenObject',
+        #'CloseObject',
         'ToggleObject',
         'HeatObject',
         'CleanObject',

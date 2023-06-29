@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Optional, List
 
 from torch import Tensor
 
-from grounding.data_processing.object import Object
+from grounding.data_processing.object import Object, bind_object, object_names
 
 
 class Action:
@@ -16,38 +16,42 @@ class Action:
 
         self.type = pddl['discrete_action']['action']
         self.args = pddl['discrete_action']['args']
-        self.target_object: Object = Object(self.args[0])
-        self.templated_string: str = self.convert_pddl_to_templated_string(pddl)
+        self.target_object: Object = bind_object(self.args[0])
+        self.templated_string: str = self._make_templated_string(self.type, self.args)
 
     @staticmethod
-    def convert_pddl_to_templated_string(pddl_action: dict) -> str:
+    def _make_templated_string(action_type: str, args: List[str]) -> str:
         templated_str = ""
-        a_type = pddl_action['discrete_action']['action']
-        args = pddl_action['discrete_action']['args']
 
-        if 'GotoLocation' in a_type:
+        if 'GotoLocation' in action_type:
             templated_str = "Go to the %s. " % (args[0])
-        elif 'OpenObject' in a_type:
+        elif 'OpenObject' in action_type:
             templated_str = "Open the %s. " % (args[0])
-        elif 'CloseObject' in a_type:
+        elif 'CloseObject' in action_type:
             templated_str = "Close the %s. " % (args[0])
-        elif 'PickupObject' in a_type:
+        elif 'PickupObject' in action_type:
             templated_str = "Pick up the %s. " % (args[0])
-        elif 'PutObject' in a_type:
+        elif 'PutObject' in action_type:
             templated_str = "Put the %s in the %s. " % (args[0], args[1])
-        elif 'CleanObject' in a_type:
+        elif 'CleanObject' in action_type:
             templated_str = "Wash the %s. " % (args[0])
-        elif 'HeatObject' in a_type:
+        elif 'HeatObject' in action_type:
             templated_str = "Heat the %s. " % (args[0])
-        elif 'CoolObject' in a_type:
+        elif 'CoolObject' in action_type:
             templated_str = "Cool the %s. " % (args[0])
-        elif 'ToggleObject' in a_type:
+        elif 'ToggleObject' in action_type:
             templated_str = "Toggle %s. " % (args[0])
-        elif 'SliceObject' in a_type:
+        elif 'SliceObject' in action_type:
             templated_str = "Slice the %s. " % (args[0])
-        elif 'NoOp' in a_type:
+        elif 'NoOp' in action_type:
             templated_str = "<<STOP>>"
         return templated_str
+
+    def make_classification_strings(self):
+        # Todo: Handle receptacle objects too
+        return [self._make_templated_string(self.type, [object_name] + self.args[1:])
+                for object_name in object_names]
+
 
     def assign_id(self, id: int) -> Action:
         self.id = id

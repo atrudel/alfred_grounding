@@ -1,6 +1,7 @@
 import pickle
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from torch.utils.data import Dataset, DataLoader
 
@@ -27,10 +28,23 @@ class AlfredHLActionDataset(Dataset):
         return input_text, input_image_feats, output_text
 
 
-
 class EvalAlfredHLActionDataset(AlfredHLActionDataset):
-    pass
+    """Dataset of high level actions used to evaluate models in grounding."""
 
+    def get_actions_by_objects(self) -> Dict[str, List[Action]]:
+        actions_by_objects: defaultdict = defaultdict(list)
+        for action in self.actions:
+            actions_by_objects[action.target_object.name].append(action)
+        return actions_by_objects
+
+    def get_actions_by_type(self) -> Dict[str, List[Action]]:
+        actions_by_type: defaultdict = defaultdict(list)
+        for action in self.actions:
+            actions_by_type[action.type].append(action)
+        return actions_by_type
+
+    def __getitem__(self, item: int) -> Action:
+        return self.actions[item]
 
 def get_train_and_val_dataloaders(batch_size: int, num_workers: int = 1,
                                   train_fraction: float = 1.) -> Tuple[DataLoader, DataLoader]:

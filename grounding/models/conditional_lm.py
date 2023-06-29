@@ -3,7 +3,9 @@ from typing import Optional, Tuple, List
 import torch
 from torch import nn, Tensor
 from transformers import T5ForConditionalGeneration, T5Tokenizer, T5TokenizerFast, BatchEncoding
-from transformers.modeling_outputs import Seq2SeqLMOutput
+
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class ImageConditionedLLMOnDecoder(nn.Module):
@@ -40,33 +42,6 @@ class ImageConditionedLLMOnDecoder(nn.Module):
             labels=output_token_ids
         )
 
-    def test_generate(self,
-                      input_token_ids: Tensor,
-                      decoder_input_token_ids: Tensor,
-                      decoder_input_att_mask: Tensor,
-                      image_feature_sequence: Tensor,
-                      stop_token: int,
-                      ):
-
-        decoder_input_embeddings = self.model.decoder.embed_tokens(decoder_input_token_ids[:,:stop_token])
-        if self.use_image:
-            image_feature_sequence = image_feature_sequence[:,:stop_token]
-            fused_decoder_input_embeddings = self.modality_fusion_module(
-                torch.cat([image_feature_sequence, decoder_input_embeddings], dim=2)
-            )
-        else:
-            fused_decoder_input_embeddings = decoder_input_embeddings
-
-        decoder_input_att_mask = decoder_input_att_mask[:,:stop_token]
-
-        output: Seq2SeqLMOutput = self.model(
-            input_ids=input_token_ids,
-            decoder_inputs_embeds=fused_decoder_input_embeddings,
-            decoder_attention_mask=decoder_input_att_mask,
-        )
-
-        return output
-
 
     def prepare_image_and_output_data(self, input_image_feats: Tensor, output_texts: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         pad_tok: int = self.tokenizer.pad_token_id
@@ -95,7 +70,7 @@ class ImageConditionedLLMOnDecoder(nn.Module):
 
     @classmethod
     def load(cls, save_path: str):
-        checkpoint = torch.load(save_path)
+        checkpoint = torch.load(save_path, map_location=device)
         model_state_dict = checkpoint['model_state_dict']
         model = ImageConditionedLLMOnDecoder()
         model.load_state_dict(model_state_dict)

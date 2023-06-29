@@ -6,7 +6,8 @@ import torch
 from torch import Tensor
 
 from grounding.data_processing.action import Action
-from grounding.data_processing.object import Object
+from grounding.data_processing.object import Object, bind_object, UnmatchedObjectException
+
 
 class Trajectory:
     def __init__(self,
@@ -25,9 +26,9 @@ class Trajectory:
         self.annotation: dict = traj_data['turk_annotations']['anns'][self.repeat_idx]
         self.pddl_plan: dict = self.fix_missing_end_action(traj_data['plan'])
 
-        self.target_object: Object = Object(traj_data['pddl_params']['object_target'])
-        self.receptacle_object: Object = Object(traj_data['pddl_params']['parent_target'])
-        self.toggle_object: Object = Object(traj_data['pddl_params']['toggle_target'])
+        self.target_object: Object = bind_object(traj_data['pddl_params']['object_target'])
+        # self.receptacle_object: Object = bind_object(traj_data['pddl_params']['parent_target'])
+        # self.toggle_object: Object = bind_object(traj_data['pddl_params']['toggle_target'])
 
         self.image_features: List[Tensor] = self.extract_high_level_image_features(all_image_features, self.pddl_plan)
 
@@ -87,11 +88,16 @@ class Trajectory:
         if not len(instructions) == len(high_pddl_actions) == len(image_features):
             raise InconsistentTrajectoryException("Trajectory doesn't have equal number of instructions, pddl actions and image features to split into actions.")
 
-        return [Action(instr, pddl, img)
-                for instr, pddl, img in zip(instructions, high_pddl_actions, image_features)]
+        actions = []
+        for instr, pddl, img in zip(instructions, high_pddl_actions, image_features):
+            try:
+                actions.append(Action(instr, pddl, img))
+            except UnmatchedObjectException:
+                print(f"Action with unknown object rejected: {pddl['discrete_action']['action']}({pddl['discrete_action']['args']})")
+        return actions
 
     def __str__(self) -> str:
-        return f"Traj< {self.task_type}({self.target_object}, {self.receptacle_object}, {self.toggle_object}) >"
+        return f"Traj< {self.task_type}({self.target_object}) >"   #, {self.receptacle_object}, {self.toggle_object}) >"
 
     def __len__(self) -> int:
         return len(self.pddl_plan)

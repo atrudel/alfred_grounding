@@ -47,11 +47,11 @@ def compute_object_accuracy_for_same_action_type(model: ImageConditionedLLMOnDec
                 output_token_ids=output_toks.to(device)
             )
         logits: Tensor = output.logits
-        loss_fn = nn.CrossEntropyLoss()
+        loss_fn = nn.CrossEntropyLoss().to(device)
         losses: Tensor = torch.zeros(n_candidates)
 
         for i in range(n_candidates):
-            target: Tensor = output_toks[i]
+            target: Tensor = output_toks[i].to(device)
             loss = loss_fn(logits[i], target)
             losses[i] = loss
 

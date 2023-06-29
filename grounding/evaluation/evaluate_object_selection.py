@@ -41,10 +41,10 @@ def compute_object_accuracy_for_same_action_type(model: ImageConditionedLLMOnDec
             output: Seq2SeqLMOutput = model.train_forward(
                 input_token_ids=input_tokenized['input_ids'].to(device),
                 input_att_mask=input_tokenized['attention_mask'].to(device),
-                decoder_input_token_ids=decoder_input_toks,
-                decoder_input_att_mask=decoder_input_att_mask,
-                image_features=decoder_image_features,
-                output_token_ids=output_toks
+                decoder_input_token_ids=decoder_input_toks.to(device),
+                decoder_input_att_mask=decoder_input_att_mask.to(device),
+                image_features=decoder_image_features.to(device),
+                output_token_ids=output_toks.to(device)
             )
         logits: Tensor = output.logits
         loss_fn = nn.CrossEntropyLoss()

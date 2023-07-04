@@ -121,7 +121,7 @@ def evaluate_object_substitution_by_object(model: ImageConditionedLLMOnDecoder,
                     subst_action = action
                 else:
                     subst_action = action.make_substitution(substitutions[subst_type])
-                accuracy, mrr = scorer(subst_action, model)
+                accuracy, mrr = scorer(subst_action, model, None)
                 accuracies[subst_type].append(accuracy)
                 mrrs[subst_type].append(mrr)
             except UnaccomplishedSubstitutionException as e:
@@ -205,6 +205,6 @@ if __name__ == '__main__':
     valid_seen_dataset = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen')
     valid_unseen_dataset = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen')
 
-    baseline_evaluation(model, train_dataset, valid_seen_dataset, valid_unseen_dataset, model_dir)
+    # baseline_evaluation(model, train_dataset, valid_seen_dataset, valid_unseen_dataset, model_dir)
 
     fork_substitution_evaluation(model, train_dataset, valid_seen_dataset, valid_unseen_dataset, model_dir)

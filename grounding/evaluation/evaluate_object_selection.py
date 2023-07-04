@@ -177,19 +177,19 @@ def fork_substitution_evaluation(model, train_dataset, valid_seen_dataset, valid
     train_forks = train_dataset.get_actions_by_objects()['fork']
     valid_seen_forks = valid_seen_dataset.get_actions_by_objects()['fork']
     valid_unseen_forks = valid_unseen_dataset.get_actions_by_objects()['fork']
-    train_acc = evaluate_object_substitution_by_object(model, train_forks, substitutions,
+    train_acc, train_mrr = evaluate_object_substitution_by_object(model, train_forks, substitutions,
                                                        compute_forced_metrics_for_action)
-    valid_seen_acc = evaluate_object_substitution_by_object(model, valid_seen_forks, substitutions,
+    valid_seen_acc, valid_seen_mrr = evaluate_object_substitution_by_object(model, valid_seen_forks, substitutions,
                                                             compute_forced_metrics_for_action)
-    valid_unseen_acc = evaluate_object_substitution_by_object(model, valid_unseen_forks, substitutions,
+    valid_unseen_acc, valid_unseen_mrr = evaluate_object_substitution_by_object(model, valid_unseen_forks, substitutions,
                                                               compute_forced_metrics_for_action)
     result_df = pd.DataFrame({
         'train_acc': train_acc,
         'valid_seen_acc': valid_seen_acc,
         'valid_unseen_acc': valid_unseen_acc,
-        'train_mrr': train_acc,
-        'valid_seen_mrr': valid_seen_acc,
-        'valid_unseen_mrr': valid_unseen_acc
+        'train_mrr': train_mrr,
+        'valid_seen_mrr': valid_seen_mrr,
+        'valid_unseen_mrr': valid_unseen_mrr
     })
     result_df.to_csv(model_dir / "fork_substitutions.csv")
 

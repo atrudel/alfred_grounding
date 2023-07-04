@@ -117,9 +117,9 @@ def generative_fork_substitution_evaluation(model, train_dataset, valid_seen_dat
         'train_acc': train_acc,
         'valid_seen_acc': valid_seen_acc,
         'valid_unseen_acc': valid_unseen_acc,
-        'train_mrr': train_acc,
-        'valid_seen_mrr': valid_seen_acc,
-        'valid_unseen_mrr': valid_unseen_acc
+        'train_mrr': train_mrr,
+        'valid_seen_mrr': valid_seen_mrr,
+        'valid_unseen_mrr': valid_unseen_mrr
     })
     result_df.to_csv(model_dir / "generative_fork_substitutions.csv")
 

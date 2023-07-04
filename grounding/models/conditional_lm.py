@@ -18,14 +18,14 @@ class ImageConditionedLLMOnDecoder(nn.Module):
         self.use_image: bool = use_image
         self.modality_fusion_module: Optional[nn.Module] = nn.Linear(self.concat_dim, self.hidden_dim) if use_image else None
 
-    def train_forward(self,
-                      input_token_ids: Tensor,
-                      input_att_mask: Tensor,
-                      decoder_input_token_ids: Tensor,
-                      decoder_input_att_mask: Tensor,
-                      image_features: Tensor,
-                      output_token_ids: Tensor
-                      ):
+    def forward(self,
+                input_token_ids: Tensor,
+                input_att_mask: Tensor,
+                decoder_input_token_ids: Tensor,
+                decoder_input_att_mask: Tensor,
+                image_features: Tensor,
+                output_token_ids: Optional[Tensor]
+                ):
         decoder_input_embeddings = self.model.decoder.embed_tokens(decoder_input_token_ids)
         if self.use_image:
             fused_decoder_input_embeddings = self.modality_fusion_module(
@@ -41,6 +41,51 @@ class ImageConditionedLLMOnDecoder(nn.Module):
             decoder_attention_mask=decoder_input_att_mask,
             labels=output_token_ids
         )
+
+    def generate(self,
+                 input_token_ids: Tensor,
+                 input_att_mask: Tensor,
+                 decoder_input_token_ids: Tensor,
+                 decoder_input_att_mask: Tensor,
+                 image_features: Tensor,
+                 ) -> Tuple[List[str], Tensor]:
+        """
+        Reproduces greedy generation with the automatic generation of image decoder input.
+        """
+        first_object_token_logits = None
+        while True:
+            image_feature_seq: Tensor = image_features.repeat(
+                image_features.shape[0],  decoder_input_token_ids.shape[1], 1
+            )
+            outputs = self.forward(
+                input_token_ids=input_token_ids.to(device),
+                input_att_mask=input_att_mask.to(device),
+                decoder_input_token_ids=decoder_input_token_ids.to(device),
+                decoder_input_att_mask=decoder_input_att_mask.to(device),
+                image_features=image_feature_seq.to(device),
+                output_token_ids=None
+            )
+            next_token_logits = outputs.logits[:, -1, :]
+            next_token_id = next_token_logits.argmax(dim=-1)
+
+            # Save the very first logits as the ones of the first object token
+            if first_object_token_logits is None:
+                first_object_token_logits = next_token_logits
+
+            # Add newly generated token to decoder input
+            decoder_input_token_ids = torch.cat(
+                [decoder_input_token_ids, torch.tensor([[next_token_id]])],
+                dim=1
+            )
+            decoder_input_att_mask = torch.cat(
+                [decoder_input_att_mask, torch.tensor([[1]])],
+                dim=1
+            )
+            if next_token_id == self.tokenizer.eos_token_id:
+                break
+        sentence_output = self.tokenizer.batch_decode(decoder_input_token_ids)
+        return sentence_output, first_object_token_logits
+
 
 
     def prepare_image_and_output_data(self, input_image_feats: Tensor, output_texts: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor]:

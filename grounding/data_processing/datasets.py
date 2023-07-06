@@ -1,7 +1,7 @@
 import pickle
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from torch.utils.data import Dataset, DataLoader
 
@@ -31,9 +31,13 @@ class AlfredHLActionDataset(Dataset):
 class EvalAlfredHLActionDataset(AlfredHLActionDataset):
     """Dataset of high level actions used to evaluate models in grounding."""
 
-    def get_actions_by_objects(self) -> Dict[str, List[Action]]:
+    def get_actions_by_objects(self, action_types: Optional[List[str]] = None, no_repeat: bool = True) -> Dict[str, List[Action]]:
         actions_by_objects: defaultdict = defaultdict(list)
         for action in self.actions:
+            if no_repeat and action.repeat_idx != 0:
+                continue
+            if action_types and action.type not in action_types:
+                continue
             actions_by_objects[action.target_object.name].append(action)
         return actions_by_objects
 

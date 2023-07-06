@@ -21,6 +21,7 @@ class Trajectory:
             traj_data: dict = json.load(f)
 
         all_image_features = torch.load(self.directory / 'feat_conv.pt')
+        all_image_info: List[dict] = traj_data['images']
 
         self.task_type: str = traj_data['task_type']
         self.annotation: dict = traj_data['turk_annotations']['anns'][self.repeat_idx]
@@ -31,6 +32,8 @@ class Trajectory:
         # self.toggle_object: Object = bind_object(traj_data['pddl_params']['toggle_target'])
 
         self.image_features: List[Tensor] = self.extract_high_level_image_features(all_image_features, self.pddl_plan)
+        self.image_paths: List[Path] = self.extract_high_level_image_paths(all_image_info, self.directory)
+        a = 1
 
     @staticmethod
     def fix_missing_end_action(pddl_plan: dict) -> dict:
@@ -79,19 +82,40 @@ class Trajectory:
                     break
         return high_level_image_features
 
+    @staticmethod
+    def extract_high_level_image_paths(all_image_info: List[dict], directory: Path) -> List[Path]:
+        """Extract the full path of the image that corresponds to the beginning of each high-level action"""
+        def get_full_image_path(directory: Path, image_filename: str) -> Path:
+            return Path('alfred/data/full_2.1.0') / \
+                    directory.relative_to('alfred/data/json_feat_2.1.0') / \
+                    'raw_images' / \
+                    image_filename.replace('png', 'jpg')
+
+        image_paths: List[Path] = []
+        curr_high_lvl_idx = -1
+        # Add first image of each high-level action
+        for image_info in all_image_info:
+            if image_info['high_idx'] > curr_high_lvl_idx:
+                image_filename: str = image_info['image_name']
+                image_path: Path = get_full_image_path(directory, image_filename)
+                image_paths.append(image_path)
+                curr_high_lvl_idx: int = image_info['high_idx']
+        return image_paths
+
     def split_actions(self) -> List[Action]:
         """Splits a trajectory into actions. Gets rid of the Stop action."""
         instructions: List[str] = self.annotation['high_descs']
         high_pddl_actions: List[dict] = self.pddl_plan['high_pddl'][:-1]
         image_features: List[Tensor] = self.image_features[:-1]
+        image_paths: List[Path] = self.image_paths
 
         if not len(instructions) == len(high_pddl_actions) == len(image_features):
             raise InconsistentTrajectoryException("Trajectory doesn't have equal number of instructions, pddl actions and image features to split into actions.")
 
         actions = []
-        for instr, pddl, img in zip(instructions, high_pddl_actions, image_features):
+        for instr, pddl, img_feats, img_path in zip(instructions, high_pddl_actions, image_features, image_paths):
             try:
-                actions.append(Action(instr, pddl, img))
+                actions.append(Action(instr, pddl, img_feats, img_path, self.repeat_idx))
             except UnmatchedObjectException:
                 print(f"Action with unknown object rejected: {pddl['discrete_action']['action']}({pddl['discrete_action']['args']})")
         return actions

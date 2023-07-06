@@ -13,4 +13,6 @@ transformers
 sentencepiece
 tensorboard
 pyyaml
+skimage
+matplotlib
 

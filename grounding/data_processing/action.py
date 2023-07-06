@@ -1,19 +1,26 @@
 from __future__ import annotations
 
 import copy
+import time
+from pathlib import Path
 from typing import Optional, List
 
+from matplotlib import pyplot as plt
 from torch import Tensor
 
 from grounding.data_processing.object import Object, bind_object, object_names
+import skimage
 
 
 class Action:
-    def __init__(self, instruction: str, pddl: dict, image_features: Tensor):
+    def __init__(self, instruction: str, pddl: dict, image_features: Tensor, img_path: Path,
+                 repeat_idx: int):
         self.id: Optional[int] = None
         self.instruction: str = instruction
         self.pddl: dict = pddl
         self.image_features: Tensor = image_features
+        self.image_path: Path = img_path
+        self.repeat_idx: int = repeat_idx
 
         self.type = pddl['discrete_action']['action']
         self.args = pddl['discrete_action']['args']
@@ -74,6 +81,20 @@ class Action:
 
     def __repr__(self) -> str:
         return self.__str__()
+
+    def show(self, image: bool = True) -> None:
+        """Display function for notebooks"""
+        print(self)
+        print(f"INSTRUCTION: {self.instruction}")
+        print(f"COMMAND:     {self.templated_string}")
+        if image:
+            try:
+                img = skimage.io.imread(self.image_path)
+                plt.figure(figsize=(5,5))
+                plt.tick_params(bottom=False, left=False, labelleft=False, labelbottom=False)
+                skimage.io.imshow(img)
+            except FileNotFoundError:
+                print("File image not available: ", self.image_path)
 
 
 class UnaccomplishedSubstitutionException(Exception):

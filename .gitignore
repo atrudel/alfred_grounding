@@ -14,3 +14,6 @@ results
 .vscode
 **/*.egg-info
 build
+*.ipynb
+venv
+.env

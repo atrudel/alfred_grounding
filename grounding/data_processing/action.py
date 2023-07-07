@@ -99,6 +99,8 @@ class Action:
                 print("File image not available: ", self.image_path)
 
     def get_image(self) -> np.ndarray:
+        if self.image is None:
+            self.load_image()
         return skimage.io.imread(self.image_path)
 
     def load_image(self) -> Action:

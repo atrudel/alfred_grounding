@@ -47,6 +47,9 @@ class EvalAlfredHLActionDataset(AlfredHLActionDataset):
             actions_by_type[action.type].append(action)
         return actions_by_type
 
+    def get_actions_by_indices(self, indices: List[int]) -> List[Action]:
+        return [self[index] for index in indices]
+
     def __getitem__(self, item: int) -> Action:
         return self.actions[item]
 

@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import Optional, List
 
+import numpy as np
 from matplotlib import pyplot as plt
 from torch import Tensor
 
@@ -20,6 +21,7 @@ class Action:
         self.pddl: dict = pddl
         self.image_features: Tensor = image_features
         self.image_path: Path = img_path
+        self.image: Optional[np.ndarray] = None
         self.repeat_idx: int = repeat_idx
 
         self.type = pddl['discrete_action']['action']
@@ -89,13 +91,19 @@ class Action:
         print(f"COMMAND:     {self.templated_string}")
         if image:
             try:
-                img = skimage.io.imread(self.image_path)
+                img: np.ndarray = skimage.io.imread(self.image_path)
                 plt.figure(figsize=(5,5))
                 plt.tick_params(bottom=False, left=False, labelleft=False, labelbottom=False)
                 skimage.io.imshow(img)
             except FileNotFoundError:
                 print("File image not available: ", self.image_path)
 
+    def get_image(self) -> np.ndarray:
+        return skimage.io.imread(self.image_path)
+
+    def load_image(self) -> Action:
+        self.image = self.get_image()
+        return self
 
 class UnaccomplishedSubstitutionException(Exception):
     def __init__(self, message):

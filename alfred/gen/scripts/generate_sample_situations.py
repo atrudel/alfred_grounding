@@ -393,7 +393,7 @@ def main(args):
         # environment setup
         constants.pddl_goal_type = gtype
         print("PDDLGoalType: " + constants.pddl_goal_type)
-        task_id = create_dirs(gtype, pickup_obj, movable_obj, receptacle_obj, sampled_scene)
+        task_id = createdirs(gtype, pickup_obj, movable_obj, receptacle_obj, sampled_scene)
 
         # setup data dictionary
         setup_data_dict()

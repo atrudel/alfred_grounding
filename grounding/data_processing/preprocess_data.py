@@ -19,8 +19,8 @@ def preprocess_all_data():
     val_seen_split = splits['valid_seen']
     val_unseen_split = splits['valid_unseen']
 
-    preprocess_split_in_high_level_actions('alfred/data/json_feat_2.1.0/train', train_split)
-    preprocess_split_in_high_level_actions('alfred/data/json_feat_2.1.0/valid_seen', val_seen_split)
+    # preprocess_split_in_high_level_actions('alfred/data/json_feat_2.1.0/train', train_split)
+    # preprocess_split_in_high_level_actions('alfred/data/json_feat_2.1.0/valid_seen', val_seen_split)
     preprocess_split_in_high_level_actions('alfred/data/json_feat_2.1.0/valid_unseen', val_unseen_split)
 
 

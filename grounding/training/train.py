@@ -17,6 +17,8 @@ from transformers.modeling_outputs import Seq2SeqLMOutput
 from grounding.data_processing.datasets import get_train_and_val_dataloaders
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
+MODEL_SAVE_FILENAME = 'checkpoint.pth.tar'
+
 parser = argparse.ArgumentParser(description='Training of a conditioned language model.')
 
 parser.add_argument('--name', type=str, help='Name of experiment')
@@ -27,7 +29,6 @@ parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to
 parser.add_argument('--eval_every', type=int, default=220, help='Nb of update steps between evaluations')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')
 parser.add_argument('--debug', action='store_true')
-
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -172,7 +173,7 @@ def launch_training(args: Namespace):
                                 'optimizer_state_dict': optimizer.state_dict(),
                                 'val_seen_loss': val_seen_loss
                             },
-                            result_path / 'checkpoint.pth.tar'
+                            result_path / MODEL_SAVE_FILENAME
                         )
                 writer.flush()
         train_loss = np.array(avg_train_losses).mean()

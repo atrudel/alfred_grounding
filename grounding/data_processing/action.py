@@ -95,6 +95,7 @@ class Action:
                 plt.figure(figsize=(5,5))
                 plt.tick_params(bottom=False, left=False, labelleft=False, labelbottom=False)
                 skimage.io.imshow(img)
+                plt.close()
             except FileNotFoundError:
                 print("File image not available: ", self.image_path)
 
@@ -106,6 +107,7 @@ class Action:
     def load_image(self) -> Action:
         self.image = skimage.io.imread(self.image_path)
         return self
+
 
 class UnaccomplishedSubstitutionException(Exception):
     def __init__(self, message):

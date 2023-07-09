@@ -13,6 +13,7 @@ from transformers.modeling_outputs import Seq2SeqLMOutput
 
 from grounding.data_processing.action import Action, UnaccomplishedSubstitutionException
 from grounding.data_processing.datasets import EvalAlfredHLActionDataset
+from grounding.data_processing.object import Object, object_names
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -44,6 +45,27 @@ def compute_object_accuracy_for_same_action_type(model: ImageConditionedLLMOnDec
 def compute_forced_metrics_for_action(action: Action,
                                       model: ImageConditionedLLMOnDecoder,
                                       log_file: Optional[TextIO]) -> Tuple[float, float]:
+    candidate_output_texts, losses = compute_forced_losses(action, model)
+    selected_candidate = losses.argmin().item()
+    accuracy = float((selected_candidate == action.target_object.index))
+    mrr: float = reciprocal_rank(losses, action.target_object.index)
+    if log_file is not None:
+        print(f"{str(action): <40} acc={accuracy: .2f} mrr={mrr: .2f} \t {candidate_output_texts[selected_candidate]}",
+              file=log_file)
+    return accuracy, mrr
+
+def compute_forced_metrics_for_ambiguous_situation(action: Action,
+                                                   model: ImageConditionedLLMOnDecoder,
+                                                   tested_objects: List[Object]
+                                                   ) -> Tuple[float, str]:
+    _,  losses = compute_forced_losses(action, model)
+    mrrs = [reciprocal_rank(losses, object.index) for object in tested_objects]
+    most_likely_index: int = losses.argmin().item()
+    most_likely_object: str = object_names[most_likely_index]
+    return mrrs, most_likely_object
+
+
+def compute_forced_losses(action: Action, model: ImageConditionedLLMOnDecoder):
     candidate_output_texts: List[str] = action.make_classification_strings()
     n_candidates = len(candidate_output_texts)
     input_tokenized: BatchEncoding = model.tokenizer(
@@ -70,13 +92,7 @@ def compute_forced_metrics_for_action(action: Action,
         target: Tensor = output_toks[i].to(device)
         loss = loss_fn(logits[i], target)
         losses[i] = loss
-    selected_candidate = losses.argmin().item()
-    accuracy = float((selected_candidate == action.target_object.index))
-    mrr: float = reciprocal_rank(losses, action.target_object.index)
-    if log_file is not None:
-        print(f"{str(action): <40} acc={accuracy: .2f} mrr={mrr: .2f} \t {candidate_output_texts[selected_candidate]}",
-              file=log_file)
-    return accuracy, mrr
+    return candidate_output_texts, losses
 
 
 def evaluate_object_selection_by_action_type(model: ImageConditionedLLMOnDecoder,

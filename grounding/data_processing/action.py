@@ -1,28 +1,29 @@
 from __future__ import annotations
 
 import copy
-import time
 from pathlib import Path
 from typing import Optional, List
 
 import numpy as np
+import skimage
 from matplotlib import pyplot as plt
 from torch import Tensor
 
 from grounding.data_processing.object import Object, bind_object, object_names
-import skimage
 
 
 class Action:
-    def __init__(self, instruction: str, pddl: dict, image_features: Tensor, img_path: Path,
-                 repeat_idx: int):
+    def __init__(self, instruction: str, pddl: dict, image_features: Tensor, img_path: Path, trajectory_path: Path,
+                 repeat_idx: int, split: str):
         self.id: Optional[int] = None
         self.instruction: str = instruction
         self.pddl: dict = pddl
         self.image_features: Tensor = image_features
         self.image_path: Path = img_path
         self.image: Optional[np.ndarray] = None
+        self.trajectory_path: Path = trajectory_path
         self.repeat_idx: int = repeat_idx
+        self.split: str = split
 
         self.type = pddl['discrete_action']['action']
         self.args = pddl['discrete_action']['args']
@@ -79,7 +80,12 @@ class Action:
         return self
 
     def __str__(self) -> str:
-        return f"Act{self.id}_{self.type}({self.args})"
+        split_abbreviations = {
+            'train': 'TRAIN',
+            'valid_seen': 'VSEEN',
+            'valid_unseen': 'VUNSEEN'
+        }
+        return f"Act_{split_abbreviations[self.split]}_{self.id}_{self.type}({self.args})"
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -87,6 +93,7 @@ class Action:
     def show(self, image: bool = True) -> None:
         """Display function for notebooks"""
         print(self)
+        print(self.trajectory_path)
         print(f"INSTRUCTION: {self.instruction}")
         print(f"COMMAND:     {self.templated_string}")
         if image:
@@ -95,7 +102,6 @@ class Action:
                 plt.figure(figsize=(5,5))
                 plt.tick_params(bottom=False, left=False, labelleft=False, labelbottom=False)
                 skimage.io.imshow(img)
-                plt.close()
             except FileNotFoundError:
                 print("File image not available: ", self.image_path)
 

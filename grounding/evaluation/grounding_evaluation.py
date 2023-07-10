@@ -14,7 +14,7 @@ from tqdm import tqdm
 from grounding.data_processing.action import Action
 from grounding.data_processing.datasets import EvalAlfredHLActionDataset
 from grounding.data_processing.object import Object
-from grounding.evaluation.scoring import compute_forced_metrics_for_ambiguous_situation
+from grounding.evaluation.scoring.forced_scoring import compute_forced_metrics_for_ambiguous_situation
 from grounding.evaluation.utils import parse_eval_args, mean, object_counts
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 

@@ -56,6 +56,9 @@ class EvalAlfredHLActionDataset(AlfredHLActionDataset):
     def get_actions_by_indices(self, indices: List[int]) -> List[Action]:
         return [self[index] for index in indices]
 
+    def inspect_action(self, index: int) -> None:
+        self.actions[index].show()
+
     def __getitem__(self, item: int) -> Action:
         return self.actions[item]
 

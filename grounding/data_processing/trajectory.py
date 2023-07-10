@@ -10,12 +10,10 @@ from grounding.data_processing.object import Object, bind_object, UnmatchedObjec
 
 
 class Trajectory:
-    def __init__(self,
-                 directory: str,
-                 repeat_idx: int,
-                 ):
+    def __init__(self, directory: str, repeat_idx: int, split: str):
         self.directory: Path = Path(directory)
         self.repeat_idx: int = repeat_idx
+        self.split = split
 
         with open(self.directory / 'traj_data.json') as f:
             traj_data: dict = json.load(f)
@@ -115,7 +113,7 @@ class Trajectory:
         actions = []
         for instr, pddl, img_feats, img_path in zip(instructions, high_pddl_actions, image_features, image_paths):
             try:
-                actions.append(Action(instr, pddl, img_feats, img_path, self.repeat_idx))
+                actions.append(Action(instr, pddl, img_feats, img_path, self.directory, self.repeat_idx, self.split))
             except UnmatchedObjectException:
                 print(f"Action with unknown object rejected: {pddl['discrete_action']['action']}({pddl['discrete_action']['args']})")
         return actions

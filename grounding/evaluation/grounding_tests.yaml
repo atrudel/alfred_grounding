@@ -1,0 +1,72 @@
+- 'title': tomato_lettuce
+  'object_1': 'tomato'
+  'object_2': 'lettuce'
+  'generic_name': 'vegetable'
+  'object_unrelated': 'vase'
+  'instruction_template': "Grab the {object} in front of you."
+  'actions_1':
+    valid_unseen:
+      - 112
+      - 1092
+      - 3770
+      - 4474
+      - 4928
+  'actions_2':
+    'valid_unseen':
+      - 310
+      - 621
+      - 2001
+      - 2968
+  'actions_both':
+    'valid_unseen':
+      - 876
+      - 882
+      - 2516
+      - 459
+      - 3311
+      - 4510
+  'actions_unrelated':
+    'valid_seen':
+      - 37
+      - 2056
+      - 2060
+    'valid_unseen':
+      - 4627
+      - 1230
+      - 1566
+
+- 'title': plate_bowl
+  'object_1': plate
+  'object_2': bowl
+  'generic_name': dish
+  'object_unrelated': vase
+  'instruction_template': "Grab the {object} in front of you."
+  'actions_1':
+    valid_seen:
+      - 1099
+      - 3056
+      - 3746
+      - 4968
+      - 5028
+  'actions_2':
+    'valid_seen':
+      - 297
+      - 999
+      - 1318
+      - 1998
+      - 2750
+      - 4188
+  'actions_both':
+    'valid_seen':
+      - 2368
+      - 4986
+      - 708
+  'actions_unrelated':
+    'valid_seen':
+      - 37
+      - 2056
+      - 2060
+    'valid_unseen':
+      - 4627
+      - 1230
+      - 1566

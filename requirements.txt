@@ -15,4 +15,5 @@ tensorboard
 pyyaml
 scikit-image
 matplotlib
+datatest
 

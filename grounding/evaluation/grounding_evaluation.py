@@ -2,7 +2,10 @@ import argparse
 import os
 import pickle
 from pathlib import Path
-from typing import List
+from typing import List, Dict
+
+import yaml
+from datatest import working_directory
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -22,16 +25,10 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class GroundingTest:
-    def __init__(self,
-                 object_1: str,
-                 object_2: str,
-                 generic_name: str,
-                 object_unrelated: str,
-                 instruction_template: str,
-                 actions_1: List[Action],
-                 actions_2: List[Action],
-                 actions_both: List[Action],
-                 actions_unrelated: List[Action]):
+    def __init__(self, title: str, object_1: str, object_2: str, generic_name: str, object_unrelated: str,
+                 instruction_template: str, actions_1: List[Action], actions_2: List[Action],
+                 actions_both: List[Action], actions_unrelated: List[Action]):
+        self.title: str = title
         self.object_1: Object = Object(object_1)
         self.object_2: Object = Object(object_2)
         self.generic_name: str = generic_name
@@ -118,30 +115,52 @@ class GroundingTest:
         print(f"Grounding test saved to {filepath}")
 
     def __str__(self) -> str:
-        return f"grounding_test({self.object_1.name},{self.object_2.name}||{self.object_unrelated.name})"
+        return f"grounding_test({self.title})"
+
+
+def build_grounding_tests() -> List[GroundingTest]:
+    def extract_actions(action_numbers: Dict[str, List[int]]) -> List[Action]:
+        valid_seen_actions = data_valid_seen.get_actions_by_indices(action_numbers.get('valid_seen', []))
+        valid_unseen_actions = data_valid_unseen.get_actions_by_indices(action_numbers.get('valid_unseen', []))
+        return valid_seen_actions + valid_unseen_actions
+
+    data_valid_seen = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen')
+    data_valid_unseen = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen')
+
+    with working_directory(__file__):
+        with open("grounding_tests.yaml", 'r') as stream:
+            grounding_tests_info = yaml.safe_load(stream)
+
+    return [
+        GroundingTest(title=test_info['title'],
+                       object_1=test_info['object_1'],
+                       object_2=test_info['object_2'],
+                       generic_name=test_info['generic_name'],
+                       object_unrelated=test_info['object_unrelated'],
+                       instruction_template=test_info['instruction_template'],
+                       actions_1=extract_actions(test_info['actions_1']),
+                       actions_2=extract_actions(test_info['actions_2']),
+                       actions_both=extract_actions(test_info['actions_both']),
+                       actions_unrelated=extract_actions(test_info['actions_unrelated']))
+        for test_info in grounding_tests_info
+    ]
 
 
 if __name__ == '__main__':
     args: argparse.Namespace = parse_eval_args()
+    save_dir: Path = args.model_dir / 'grounding_evaluation'
+    os.makedirs(save_dir, exist_ok=True)
 
     print("Loading data...")
-    data = EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen')
-    grounding_test = GroundingTest(
-        object_1='tomato',
-        object_2='lettuce',
-        generic_name='vegetable',
-        object_unrelated='vase',
-        instruction_template="Grab the {object} in front of you.",
-        actions_1=data.get_actions_by_indices([112, 1092, 3770, 4474, 4928]),
-        actions_2=data.get_actions_by_indices([310, 621, 2001, 2968]),
-        actions_both=data.get_actions_by_indices([876, 882, 2516, 459, 3311, 4510]),
-        actions_unrelated=data.get_actions_by_indices([4627, 1230, 1566, 2986]),
-    )
+    grounding_tests: List[GroundingTest] = build_grounding_tests()
+
     print("Loading model...")
     model = ImageConditionedLLMOnDecoder.load(args.model_path).to(device)
-    print("Launching test")
-    results: pd.DataFrame = grounding_test.launch(model)
-    save_path: Path = args.model_dir / f"{str(grounding_test)}.csv"
-    results.to_csv(save_path)
-    print(f"Results saved to {save_path}")
+
+    for grounding_test in grounding_tests:
+        print(f"Launching grounding test: {grounding_test.title}")
+        results: pd.DataFrame = grounding_test.launch(model)
+        save_path: Path = save_dir / f"{str(grounding_test)}.csv"
+        results.to_csv(save_path)
+        print(f"Results saved to {save_path}")
 

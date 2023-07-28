@@ -4,13 +4,11 @@ import pickle
 from pathlib import Path
 from typing import List, Dict
 
-import yaml
-from datatest import working_directory
-
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import torch.cuda
+import yaml
+from datatest import working_directory
 from mpl_toolkits.axes_grid1 import ImageGrid
 from tqdm import tqdm
 

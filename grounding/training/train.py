@@ -62,9 +62,8 @@ def forward_pass(batch, model: ImageConditionedLLMOnDecoder):
     input_texts, input_image_feats, output_texts = batch
 
     input_tokenized: BatchEncoding = model.tokenizer(input_texts, padding='longest', return_tensors='pt')
-    decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_image_and_output_data(
-        input_image_feats, output_texts
-    )
+    decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_decoder_input_output_data(
+        input_image_feats, output_texts)
 
     output: Seq2SeqLMOutput = model.forward(
         input_token_ids=input_tokenized['input_ids'].to(device),

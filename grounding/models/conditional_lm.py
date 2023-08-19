@@ -9,14 +9,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 class ImageConditionedLLMOnDecoder(nn.Module):
-    def __init__(self, concat_dim=1024, hidden_dim=512, use_image=True):
+    def __init__(self, image_embedding_dim=512, use_image=True):
         super(ImageConditionedLLMOnDecoder, self).__init__()
         self.model: T5ForConditionalGeneration = T5ForConditionalGeneration.from_pretrained('t5-small', return_dict=True)
         self.tokenizer: T5Tokenizer = T5TokenizerFast.from_pretrained('t5-small')
-        self.concat_dim: int = concat_dim
-        self.hidden_dim: int = hidden_dim
         self.use_image: bool = use_image
-        self.modality_fusion_module: Optional[nn.Module] = nn.Linear(self.concat_dim, self.hidden_dim) if use_image else None
+        self.modality_fusion_module: Optional[nn.Module] = nn.Linear(
+            image_embedding_dim + self.model.model_dim, self.model.model_dim
+        ) if use_image else None
 
     def forward(self,
                 input_token_ids: Tensor,
@@ -88,7 +88,7 @@ class ImageConditionedLLMOnDecoder(nn.Module):
 
 
 
-    def prepare_image_and_output_data(self, input_image_feats: Tensor, output_texts: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
+    def prepare_decoder_input_output_data(self, input_image_feats: Tensor, output_texts: List[str]) -> Tuple[Tensor, Tensor, Tensor, Tensor]:
         pad_tok: int = self.tokenizer.pad_token_id
         ignore_tok: int = -100
 
@@ -107,6 +107,8 @@ class ImageConditionedLLMOnDecoder(nn.Module):
 
         # Preparing image features tensor: copy to match the token sequence length
         sequence_length: int = decoder_input_toks.shape[1]
+        if len(input_image_feats.shape) == 2:
+            input_image_feats = input_image_feats.unsqueeze(1) # Add the sequence dimension if not present
         decoder_image_features = input_image_feats.repeat(1, sequence_length, 1)
 
         return decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks

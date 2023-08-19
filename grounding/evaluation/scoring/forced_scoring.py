@@ -55,9 +55,8 @@ def compute_forced_losses(action: Action, model: ImageConditionedLLMOnDecoder):
         return_tensors='pt'
     )
     image_features: Tensor = action.image_features.unsqueeze(0).repeat(n_candidates, 1, 1)
-    decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_image_and_output_data(
-        image_features, candidate_output_texts
-    )
+    decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_decoder_input_output_data(
+        image_features, candidate_output_texts)
     with torch.no_grad():
         output: Seq2SeqLMOutput = model.forward(
             input_token_ids=input_tokenized['input_ids'].to(device),

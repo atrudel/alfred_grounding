@@ -1,4 +1,4 @@
-from grounding.models.frozen_models.clip import CLIPModel
+from grounding.models.base_models.clip import CLIPModel
 
 
 class CLIPActionScorer:

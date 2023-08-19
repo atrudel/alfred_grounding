@@ -5,32 +5,40 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 import lightning as L
 
 from grounding.data_processing.datasets import get_train_and_val_dataloaders
-from grounding.models.clasp.decoders import TextDecoder, PrefixMappingTextDecoder, BehaviorDecoder, \
-    PrefixMappingBehaviorDecoder
-from grounding.models.clasp.encoders import TextEncoder, BehaviorEncoder
+from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
+from grounding.models.clasp.decoders.t5.t5_captioner import T5Captioner
+from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixMappingBehaviorGenerator
+from grounding.models.clasp.decoders.t5.t5_behavior_generator import T5BehaviorGenerator
+from grounding.models.clasp.decoders.base_classes import BehaviorDecoder, TextDecoder
+from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
+from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
 
 device = "gpu" if torch.cuda.is_available() else "cpu"
 
 
 class CLASP(L.LightningModule):
     def __init__(self, z_size: int,
-                 captioner: TextDecoder,
+                 prefix_mapping: bool = False,
                  beta_align: float = 1,
                  beta_caption: float = 1,
                  beta_behavior_gen: float = 1,
                  temperature: float = 0.07,
-                 learning_rate: float = 1e-4):
+                 learning_rate: float = 1e-4,
+                 weight_deacay: float = 0.01):
         super().__init__()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
-        self.captioner: TextDecoder = captioner
-        self.behavior_decoder: BehaviorDecoder = PrefixMappingBehaviorDecoder(z_size)
+        self.captioner: TextDecoder = PrefixTuningCaptioner(embed_dim=z_size) if prefix_mapping \
+            else T5Captioner(z_size=z_size)
+        self.behavior_generator: BehaviorDecoder = PrefixMappingBehaviorGenerator(z_size) if prefix_mapping \
+            else T5BehaviorGenerator(z_size=z_size)
         self.cross_entropy: nn.CrossEntropyLoss = nn.CrossEntropyLoss()
         self.beta_align: float = beta_align
         self.beta_caption: float = beta_caption
         self.beta_behavior_gen: float = beta_behavior_gen
         self.temperature: float = temperature
         self.learning_rate: float = learning_rate
+        self.weight_decay: float = weight_deacay
 
     def training_step(self, batch, batch_idx) -> float:
         instructions, images, actions = batch
@@ -49,7 +57,7 @@ class CLASP(L.LightningModule):
                                  lr=self.learning_rate,
                                  betas=(0.9, 0.999),
                                  eps=1e-08,
-                                 weight_decay=0.01,
+                                 weight_decay=self.weight_decay,
                                  amsgrad=False)
 
     def _forward(self, actions, images, instructions) -> float:
@@ -74,7 +82,7 @@ class CLASP(L.LightningModule):
 
     def _forward_behavior_generation(self, instructions, images, actions) -> float:
         z_instruction = self.reparametrization_trick(*self.instruction_encoder(instructions))
-        output = self.behavior_decoder(z_instruction, images, actions)
+        output = self.behavior_generator(z_instruction, images, actions)
         return output.loss
 
 
@@ -101,10 +109,10 @@ class CLASP(L.LightningModule):
 
 
 if __name__ == '__main__':
-    z_size = 24
-    clasp = CLASP(z_size=z_size, captioner=PrefixMappingTextDecoder(embed_dim=z_size))
+    z_size = 512
+    clasp = CLASP(z_size=z_size, prefix_mapping=True)
 
-    train_dataloader, val_dataloader = get_train_and_val_dataloaders(batch_size=8, use_raw_images=True)
+    train_dataloader, val_dataloader = get_train_and_val_dataloaders(batch_size=8, use_raw_images=True, num_workers=2)
     trainer = L.Trainer(limit_train_batches=2, max_epochs=1)
     trainer.fit(model=clasp, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
 

@@ -1,7 +1,7 @@
-from grounding.models.base_models.clip import CLIPModel
+from grounding.models.base_models.clip import CLIPModelFrozen
 
 
 class CLIPActionScorer:
     def __init__(self):
-        self.clip: CLIPModel = CLIPModel
+        self.clip: CLIPModelFrozen = CLIPModelFrozen
 

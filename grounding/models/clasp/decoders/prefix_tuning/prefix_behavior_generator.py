@@ -1,16 +1,16 @@
 import torch
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
-from grounding.models.base_models.clip import CLIPModel
+from grounding.models.base_models.clip import CLIPModelFrozen
 from grounding.models.base_models.gpt2 import PrefixGPT2Model
 from grounding.models.base_models.prefix_mapper import PrefixMapper
-from grounding.models.clasp.decoders.base_classes import BehaviorDecoder
+from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder
 
 
-class PrefixMappingBehaviorGenerator(BehaviorDecoder):
+class PrefixMappingBehaviorGenerator(BehaviorGeneratingDecoder):
     def __init__(self, z_dim, k_prefix=10, n_layers=8):
         super().__init__()
-        self.clip = CLIPModel
+        self.clip = CLIPModelFrozen()
         self.prefix_mapper: PrefixMapper = PrefixMapper(z_dim + self.clip.image_embedding_dim(), k_prefix, n_layers)
         self.prefix_gpt = PrefixGPT2Model
 

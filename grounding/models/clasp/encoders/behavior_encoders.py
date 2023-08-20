@@ -3,14 +3,14 @@ from typing import Tuple
 import torch
 from torch import nn, Tensor
 
-from grounding.models.base_models.clip import CLIPModel
-from grounding.models.clasp.encoders import VariationalEncoder
+from grounding.models.base_models.clip import CLIPModelFrozen
+from grounding.models.clasp.encoders.variational_encoder import VariationalEncoder
 
 
 class BehaviorEncoder(nn.Module):
     def __init__(self, z_size):
         super().__init__()
-        self.clip = CLIPModel
+        self.clip = CLIPModelFrozen()
         self.variational_encoder = VariationalEncoder(
             input_size=self.clip.text_embedding_dim() + self.clip.image_embedding_dim(),
             hidden_size=(self.clip.text_embedding_dim() + self.clip.image_embedding_dim()) // 2,

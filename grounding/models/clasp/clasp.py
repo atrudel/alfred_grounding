@@ -3,13 +3,14 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 import lightning as L
+from transformers.utils import ModelOutput
 
 from grounding.data_processing.datasets import get_train_and_val_dataloaders
 from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
 from grounding.models.clasp.decoders.t5.t5_captioner import T5Captioner
 from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixMappingBehaviorGenerator
 from grounding.models.clasp.decoders.t5.t5_behavior_generator import T5BehaviorGenerator
-from grounding.models.clasp.decoders.base_classes import BehaviorDecoder, TextDecoder
+from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptionDecoder
 from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
 from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
 
@@ -18,19 +19,19 @@ device = "gpu" if torch.cuda.is_available() else "cpu"
 
 class CLASP(L.LightningModule):
     def __init__(self, z_size: int,
-                 prefix_mapping: bool = False,
+                 prefix_tuning: bool = False,
                  beta_align: float = 1,
                  beta_caption: float = 1,
                  beta_behavior_gen: float = 1,
                  temperature: float = 0.07,
                  learning_rate: float = 1e-4,
-                 weight_deacay: float = 0.01):
+                 weightdecay: float = 0.01):
         super().__init__()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
-        self.captioner: TextDecoder = PrefixTuningCaptioner(embed_dim=z_size) if prefix_mapping \
+        self.captioner: CaptionDecoder = PrefixTuningCaptioner(embed_dim=z_size) if prefix_tuning \
             else T5Captioner(z_size=z_size)
-        self.behavior_generator: BehaviorDecoder = PrefixMappingBehaviorGenerator(z_size) if prefix_mapping \
+        self.behavior_generator: BehaviorGeneratingDecoder = PrefixMappingBehaviorGenerator(z_size) if prefix_tuning \
             else T5BehaviorGenerator(z_size=z_size)
         self.cross_entropy: nn.CrossEntropyLoss = nn.CrossEntropyLoss()
         self.beta_align: float = beta_align
@@ -38,7 +39,7 @@ class CLASP(L.LightningModule):
         self.beta_behavior_gen: float = beta_behavior_gen
         self.temperature: float = temperature
         self.learning_rate: float = learning_rate
-        self.weight_decay: float = weight_deacay
+        self.weight_decay: float = weightdecay
 
     def training_step(self, batch, batch_idx) -> float:
         instructions, images, actions = batch
@@ -78,13 +79,12 @@ class CLASP(L.LightningModule):
     def _forward_captioning(self, instructions, images, actions) -> float:
         z_behavior = self.reparametrization_trick(*self.behavior_encoder(images, actions))
         output: CausalLMOutputWithCrossAttentions = self.captioner(z_behavior, instructions)
-        return output.loss
+        return output.loss.mean()
 
     def _forward_behavior_generation(self, instructions, images, actions) -> float:
         z_instruction = self.reparametrization_trick(*self.instruction_encoder(instructions))
-        output = self.behavior_generator(z_instruction, images, actions)
-        return output.loss
-
+        output: ModelOutput = self.behavior_generator(z_instruction, images, actions)
+        return output.loss.mean()
 
     def contrastive_loss(self, z_text, z_behavior):
         batch_size: int = z_text.shape[0]
@@ -110,7 +110,7 @@ class CLASP(L.LightningModule):
 
 if __name__ == '__main__':
     z_size = 512
-    clasp = CLASP(z_size=z_size, prefix_mapping=True)
+    clasp = CLASP(z_size=z_size, prefix_tuning=True)
 
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(batch_size=8, use_raw_images=True, num_workers=2)
     trainer = L.Trainer(limit_train_batches=2, max_epochs=1)

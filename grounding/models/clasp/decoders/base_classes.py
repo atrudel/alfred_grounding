@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from transformers.utils import ModelOutput
 
 
-class BehaviorDecoder(nn.Module, metaclass=abc.ABCMeta):
+class BehaviorGeneratingDecoder(nn.Module, metaclass=abc.ABCMeta):
     def __init__(self):
         super().__init__()
 
@@ -14,7 +14,7 @@ class BehaviorDecoder(nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class TextDecoder(nn.Module, metaclass=abc.ABCMeta):
+class CaptionDecoder(nn.Module, metaclass=abc.ABCMeta):
     def __init__(self):
         super().__init__()
 

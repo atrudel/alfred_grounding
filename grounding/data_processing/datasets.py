@@ -14,8 +14,10 @@ class AlfredHLActionDataset(Dataset):
     """Dataset of high level actions used to train models in teacher forcing."""
     def __init__(self, root_dir: str, use_raw_images: bool = False, fraction: float = 1, debug: bool = False):
         self.root_dir: Path = Path(root_dir)
+        print(f"Loading dataset from {root_dir}...", end='')
         with open(self.root_dir / high_level_action_dump_filename, 'rb') as f:
             full_data: List[Action] = pickle.load(f)
+        print('done.')
         self.actions: List[Action] = full_data[:int(len(full_data) * fraction)]
         self.debug: bool = debug
         self.use_raw_images: bool = use_raw_images

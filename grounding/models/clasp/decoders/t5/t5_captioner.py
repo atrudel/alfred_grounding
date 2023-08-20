@@ -4,11 +4,11 @@ import torch
 from torch import Tensor
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
-from grounding.models.clasp.decoders.base_classes import TextDecoder
+from grounding.models.clasp.decoders.base_classes import CaptionDecoder
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
 
-class T5Captioner(TextDecoder):
+class T5Captioner(CaptionDecoder):
     def __init__(self, z_size: int):
         super().__init__()
         self.conditional_t5: ImageConditionedLLMOnDecoder = ImageConditionedLLMOnDecoder(z_size)

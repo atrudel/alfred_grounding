@@ -7,6 +7,7 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 import lightning as L
 from transformers.utils import ModelOutput
 
+from config import DEVICE
 from grounding.data_processing.datasets import get_train_and_val_dataloaders
 from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
 from grounding.models.clasp.decoders.t5.t5_captioner import T5Captioner
@@ -94,7 +95,7 @@ class CLASP(L.LightningModule):
 
         similarity_logits = torch.matmul(z_text, z_behavior.T)
 
-        labels = torch.arange(batch_size)
+        labels = torch.arange(batch_size).to(DEVICE)
         loss_text = self.cross_entropy(similarity_logits, labels)
         loss_behav = self.cross_entropy(similarity_logits.T, labels)
         loss = (loss_text + loss_behav) / 2

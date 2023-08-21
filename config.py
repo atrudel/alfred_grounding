@@ -12,4 +12,4 @@ def absolute(path: str):
 
 
 REPO_ROOT = absolute('.')
-DEVICE = "gpu" if torch.cuda.is_available() else "cpu"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"

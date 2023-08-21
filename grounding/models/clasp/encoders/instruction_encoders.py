@@ -3,6 +3,7 @@ from typing import Tuple
 import torch
 from torch import nn, Tensor
 
+from config import DEVICE
 from grounding.models.base_models.clip import CLIPModelFrozen
 from grounding.models.clasp.encoders.variational_encoder import VariationalEncoder
 
@@ -15,10 +16,9 @@ class TextEncoder(nn.Module):
             input_size=self.clip.text_embedding_dim(),
             hidden_size=self.clip.text_embedding_dim() // 2,
             z_size=z_size
-        )
+        ).to(DEVICE)
 
     def forward(self, text) -> Tuple[Tensor, Tensor]:
-        with torch.no_grad():
-            clip_repr = self.clip.encode_texts(text)
+        clip_repr = self.clip.encode_texts(text)
         means, log_vars = self.variational_encoder(clip_repr)
         return means, log_vars

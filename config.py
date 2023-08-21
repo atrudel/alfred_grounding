@@ -2,6 +2,8 @@ from datatest import working_directory
 from pathlib import Path
 import os
 
+import torch
+
 
 def absolute(path: str):
     with working_directory(__file__):
@@ -10,3 +12,4 @@ def absolute(path: str):
 
 
 REPO_ROOT = absolute('.')
+DEVICE = "gpu" if torch.cuda.is_available() else "cpu"

@@ -1,3 +1,5 @@
+from typing import List
+
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
@@ -14,7 +16,6 @@ from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecod
 from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
 from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
 
-device = "gpu" if torch.cuda.is_available() else "cpu"
 
 
 class CLASP(L.LightningModule):
@@ -61,7 +62,7 @@ class CLASP(L.LightningModule):
                                  weight_decay=self.weight_decay,
                                  amsgrad=False)
 
-    def _forward(self, actions, images, instructions) -> float:
+    def _forward(self, actions: List[str], images: List[object], instructions: List[str]) -> float:
         loss_align: float = self._forward_align(instructions, images, actions)
         loss_caption: float = self._forward_captioning(instructions, images, actions)
         loss_behavior_gen: float = self._forward_behavior_generation(instructions, images, actions)
@@ -106,23 +107,3 @@ class CLASP(L.LightningModule):
         eps = torch.randn_like(stds)
         z = eps * stds + means
         return z
-
-
-if __name__ == '__main__':
-    z_size = 512
-    clasp = CLASP(z_size=z_size, prefix_tuning=True)
-
-    train_dataloader, val_dataloader = get_train_and_val_dataloaders(batch_size=8, use_raw_images=True, num_workers=2)
-    trainer = L.Trainer(limit_train_batches=2, max_epochs=1)
-    trainer.fit(model=clasp, train_dataloaders=train_dataloader, val_dataloaders=val_dataloader)
-
-    # z_size = 4
-    # clasp = CLASP(z_size=z_size, temperature=1, captioner=PrefixMappingTextDecoder(embed_dim=z_size))
-    # z_text = Tensor([[1,2,3,4],
-    #                  [0,0,0,0],
-    #                  [4,4,4,4]])
-    # z_behavior = Tensor([[1,2,3,4],
-    #                  [1,1,1,1],
-    #                  [4,4,4,4]])
-    # print(clasp.contrastive_loss(z_text, z_behavior))
-    # print(clasp.contrastive_loss_complex(z_text, z_behavior))

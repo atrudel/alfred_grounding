@@ -9,7 +9,6 @@ from grounding.models.clasp.clasp import CLASP
 parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')
 
 parser.add_argument('--name', type=str, help='Name of experiment')
-parser.add_argument('--no_image', action='store_true')
 parser.add_argument('--lr', type=float, default=0.0003, help='Learning rate')
 parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
 parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to run')

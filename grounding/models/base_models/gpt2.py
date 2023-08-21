@@ -5,13 +5,15 @@ from torch import Tensor, nn
 from transformers import GPT2TokenizerFast, BatchEncoding, GPT2LMHeadModel
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
+from config import DEVICE
+
 
 class PrefixGPT2Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
         self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.model: GPT2LMHeadModel = GPT2LMHeadModel.from_pretrained("gpt2")
+        self.model: GPT2LMHeadModel = GPT2LMHeadModel.from_pretrained("gpt2").to(DEVICE)
 
         for param in self.model.parameters():
             param.requires_grad = False
@@ -20,7 +22,7 @@ class PrefixGPT2Model(nn.Module):
 
         # Get embeddings associated with target text
         target_tokenized: BatchEncoding = self.tokenizer(target_texts, return_tensors='pt', padding=True)
-        target_embeddings: Tensor = self.model.get_input_embeddings()(target_tokenized.input_ids)
+        target_embeddings: Tensor = self.model.get_input_embeddings()(target_tokenized.input_ids.to(DEVICE))
 
         # Concatenate prefix and target embeddings
         input_embeddings: Tensor = torch.cat([prefix_embeddings, target_embeddings], dim=1)
@@ -49,8 +51,8 @@ class PrefixGPT2Model(nn.Module):
             inputs: BatchEncoding = self.tokenizer(prompt, return_tensors='pt')
             with torch.no_grad():
                 output = self.model.generate(
-                    inputs=inputs.input_ids,
-                    attention_mask=inputs.attention_mask,
+                    inputs=inputs.input_ids.to(DEVICE),
+                    attention_mask=inputs.attention_mask.to(DEVICE),
                     max_length=max_length,
                     do_sample=do_sample,
                     num_beams=10

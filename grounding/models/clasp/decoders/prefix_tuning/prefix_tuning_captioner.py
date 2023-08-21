@@ -9,7 +9,7 @@ class PrefixTuningCaptioner(CaptionDecoder):
     def __init__(self, embed_dim, k_prefix=10, n_layers=8):
         super().__init__()
         self.prefix_mapper = PrefixMapper(embed_dim, k_prefix, n_layers)
-        self.prefix_gpt: PrefixGPT2Model = PrefixGPT2Model
+        self.prefix_gpt: PrefixGPT2Model = PrefixGPT2Model()
 
     def forward(self, z, labels) -> CausalLMOutputWithCrossAttentions:
         prefix = self.prefix_mapper(z)

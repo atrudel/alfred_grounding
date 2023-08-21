@@ -12,7 +12,7 @@ class PrefixMappingBehaviorGenerator(BehaviorGeneratingDecoder):
         super().__init__()
         self.clip = CLIPModelFrozen()
         self.prefix_mapper: PrefixMapper = PrefixMapper(z_dim + self.clip.image_embedding_dim(), k_prefix, n_layers)
-        self.prefix_gpt = PrefixGPT2Model
+        self.prefix_gpt = PrefixGPT2Model()
 
     def forward(self, z, images, labels) -> CausalLMOutputWithCrossAttentions:
         image_repr = self.clip.encode_images(images)

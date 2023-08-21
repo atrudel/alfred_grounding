@@ -2,21 +2,21 @@ from torch import nn
 
 
 class PrefixMapper(nn.Module):
-    def __init__(self, z_dim, gpt_dim, k_prefix=10):
+    def __init__(self, input_size, gpt_embed_size, k_prefix=10):
         super().__init__()
-        self.gpt_dim: int = gpt_dim
+        self.gpt_embed_size: int = gpt_embed_size
         self.k_prefix: int = k_prefix
         self.mlp = nn.Sequential(
-            nn.Linear(z_dim, z_dim),
+            nn.Linear(input_size, input_size * 2),
             nn.ReLU(),
-            nn.Linear(z_dim, gpt_dim * k_prefix // 2),
+            nn.Linear(input_size * 2, k_prefix * gpt_embed_size // 2),
             nn.ReLU(),
-            nn.Linear(gpt_dim * k_prefix // 2, gpt_dim * k_prefix)
+            nn.Linear(k_prefix * gpt_embed_size // 2, k_prefix * gpt_embed_size)
         )
 
     def forward(self, z):
         out = self.mlp(z)
-        return out.reshape(-1, self.k_prefix, self.gpt_dim)
+        return out.reshape(-1, self.k_prefix, self.gpt_embed_size)
 
 
 # Version avec des self-attention layers

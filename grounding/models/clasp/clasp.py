@@ -10,7 +10,7 @@ from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner impor
 from grounding.models.clasp.decoders.t5.t5_captioner import T5Captioner
 from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixMappingBehaviorGenerator
 from grounding.models.clasp.decoders.t5.t5_behavior_generator import T5BehaviorGenerator
-from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptionDecoder
+from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
 from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
 from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
 
@@ -29,7 +29,7 @@ class CLASP(L.LightningModule):
         super().__init__()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
-        self.captioner: CaptionDecoder = PrefixTuningCaptioner(embed_dim=z_size) if prefix_tuning \
+        self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size) if prefix_tuning \
             else T5Captioner(z_size=z_size)
         self.behavior_generator: BehaviorGeneratingDecoder = PrefixMappingBehaviorGenerator(z_size) if prefix_tuning \
             else T5BehaviorGenerator(z_size=z_size)
@@ -50,7 +50,7 @@ class CLASP(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         instructions, images, actions = batch
         loss = self._forward(actions, images, instructions)
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, batch_size=len(instructions))
 
 
     def configure_optimizers(self):

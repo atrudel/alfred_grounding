@@ -8,11 +8,15 @@ from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecod
 
 
 class PrefixMappingBehaviorGenerator(BehaviorGeneratingDecoder):
-    def __init__(self, z_dim, k_prefix=10, n_layers=8):
+    def __init__(self, z_dim, k_prefix=10):
         super().__init__()
         self.clip = CLIPModelFrozen()
-        self.prefix_mapper: PrefixMapper = PrefixMapper(z_dim + self.clip.image_embedding_dim(), k_prefix, n_layers)
         self.prefix_gpt = PrefixGPT2Model()
+        self.prefix_mapper: PrefixMapper = PrefixMapper(
+            input_size=z_dim + self.clip.image_embedding_dim(),
+            gpt_embed_size=self.prefix_gpt.embedding_size,
+            k_prefix=k_prefix
+        )
 
     def forward(self, z, images, labels) -> CausalLMOutputWithCrossAttentions:
         image_repr = self.clip.encode_images(images)

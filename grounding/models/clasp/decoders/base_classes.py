@@ -14,7 +14,7 @@ class BehaviorGeneratingDecoder(nn.Module, metaclass=abc.ABCMeta):
         raise NotImplementedError
 
 
-class CaptionDecoder(nn.Module, metaclass=abc.ABCMeta):
+class CaptioningDecoder(nn.Module, metaclass=abc.ABCMeta):
     def __init__(self):
         super().__init__()
 

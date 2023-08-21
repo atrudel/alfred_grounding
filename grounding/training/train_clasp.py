@@ -16,7 +16,7 @@ parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to
 parser.add_argument('--eval_every', type=int, default=200, help='Nb of update steps between evaluations')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')
 parser.add_argument('--debug', action='store_true')
-parser.add_argument('--num_workers', type=int, default=2, help='Number of workers used in the data loaders.')
+parser.add_argument('--num_workers', type=int, default=1, help='Number of workers used in the data loaders.')
 
 parser.add_argument('--z_size', type=int, default=512, help='Size of the z embedding.')
 parser.add_argument('--prefix', action='store_true', help='Use prefix tuning in decoding z to text.')
@@ -38,11 +38,11 @@ def launch_training(args: Namespace):
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=args.batch_size,
         use_raw_images=True,
-        num_workers=2,
+        num_workers=args.num_workers,
         train_fraction=0.01 if args.debug else 1.
     )
     trainer: Trainer = Trainer(
-        limit_train_batches=2 if args.debug else None,
+        limit_train_batches=3 if args.debug else None,
         val_check_interval=args.eval_every,
         fast_dev_run=True if args.debug else False,
         max_epochs=args.epochs,

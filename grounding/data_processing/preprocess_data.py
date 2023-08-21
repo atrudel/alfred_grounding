@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import pickle
 from pathlib import Path
 from typing import List, Dict
@@ -53,5 +54,7 @@ def preprocess_split_in_high_level_actions(dataset_root: str, split: str, trajec
 
 
 if __name__ == '__main__':
+    assert Path(os.getcwd()).stem == 'alfred_grounding', ("The preprocessing script should be launched from the root "
+                                                          "of the directory")
     args = parser.parse_args()
     preprocess_all_data(args.skip_train)

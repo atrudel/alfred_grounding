@@ -1,40 +1,28 @@
 from typing import List
 
+import lightning as L
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
-import lightning as L
 from transformers.utils import ModelOutput
 
 from config import DEVICE
-from grounding.data_processing.datasets import get_train_and_val_dataloaders
-from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
-from grounding.models.clasp.decoders.t5.t5_captioner import T5Captioner
-from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixMappingBehaviorGenerator
-from grounding.models.clasp.decoders.t5.t5_behavior_generator import T5BehaviorGenerator
 from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
-from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
+from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixMappingBehaviorGenerator
+from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
 from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
-
+from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
 
 
 class CLASP(L.LightningModule):
-    def __init__(self, z_size: int,
-                 prefix_tuning: bool = False,
-                 beta_align: float = 1,
-                 beta_caption: float = 1,
-                 beta_behavior_gen: float = 1,
-                 temperature: float = 0.07,
-                 learning_rate: float = 1e-4,
-                 weightdecay: float = 0.01):
+    def __init__(self, z_size: int, beta_align: float = 1, beta_caption: float = 1, beta_behavior_gen: float = 1,
+                 temperature: float = 0.07, learning_rate: float = 1e-4, weightdecay: float = 0.01):
         super().__init__()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
-        self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size) if prefix_tuning \
-            else T5Captioner(z_size=z_size)
-        self.behavior_generator: BehaviorGeneratingDecoder = PrefixMappingBehaviorGenerator(z_size) if prefix_tuning \
-            else T5BehaviorGenerator(z_size=z_size)
+        self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
+        self.behavior_generator: BehaviorGeneratingDecoder = PrefixMappingBehaviorGenerator(z_size)
         self.cross_entropy: nn.CrossEntropyLoss = nn.CrossEntropyLoss()
         self.beta_align: float = beta_align
         self.beta_caption: float = beta_caption

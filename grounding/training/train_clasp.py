@@ -18,22 +18,21 @@ parser.add_argument('--debug', action='store_true')
 parser.add_argument('--num_workers', type=int, default=1, help='Number of workers used in the data loaders.')
 
 parser.add_argument('--z_size', type=int, default=512, help='Size of the z embedding.')
-parser.add_argument('--prefix', action='store_true', help='Use prefix tuning in decoding z to text.')
 parser.add_argument('--beta_caption', type=float, default=1., help='Coefficient for the captioning loss component.')
 parser.add_argument('--beta_behav_gen', type=float, default=1., help='Coefficient for the behavior generation loss component.')
 parser.add_argument('--temperature', type=float, default=0.07, help='Temperature use in the contrastive loss.')
 
 
 def launch_training(args: Namespace):
-    clasp_model = CLASP(z_size=args.z_size,
-                        prefix_tuning=args.prefix,
-                        beta_align=1,
-                        beta_caption=args.beta_caption,
-                        beta_behavior_gen=args.beta_behav_gen,
-                        temperature=args.temperature,
-                        learning_rate=args.lr,
-                        weightdecay=args.weightdecay
-                        )
+    clasp_model = CLASP(
+        z_size=args.z_size,
+        beta_align=1,
+        beta_caption=args.beta_caption,
+        beta_behavior_gen=args.beta_behav_gen,
+        temperature=args.temperature,
+        learning_rate=args.lr,
+        weightdecay=args.weightdecay
+    )
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=args.batch_size,
         use_raw_images=True,

@@ -1,39 +1,55 @@
+import os
 import pickle
 from collections import defaultdict
 from pathlib import Path
 from typing import List, Tuple, Dict, Optional
 
-from PIL import Image
+from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
+from config import REPO_ROOT
+from data_processing.preprocess_data import PREPROCESSED_ACTIONS_DIR_NAME
 from grounding.data_processing.action import Action
-from grounding.data_processing.preprocess_data import high_level_action_dump_filename
 
 
 class AlfredHLActionDataset(Dataset):
     """Dataset of high level actions used to train models in teacher forcing."""
-    def __init__(self, root_dir: str, use_raw_images: bool = False, fraction: float = 1, debug: bool = False):
-        self.root_dir: Path = Path(root_dir)
+    def __init__(self, root_dir: str, clasp_mode: bool = False, fraction: float = 1, debug: bool = False):
+        self.root_dir: Path = Path(root_dir) / PREPROCESSED_ACTIONS_DIR_NAME
+
         print(f"Loading dataset from {root_dir}...", end='')
-        with open(self.root_dir / high_level_action_dump_filename, 'rb') as f:
-            full_data: List[Action] = pickle.load(f) # Todo: load individual task
-        print('done.')
-        self.actions: List[Action] = full_data[:int(len(full_data) * fraction)]
+        all_filenames = os.listdir(self.root_dir)
+        self.filenames = all_filenames[:int(len(all_filenames) * fraction)]
         self.debug: bool = debug
-        self.use_raw_images: bool = use_raw_images
+        self.clasp_mode: bool = clasp_mode
 
     def __len__(self) -> int:
-        return len(self.actions)
+        return len(self.filenames)
 
     def __getitem__(self, index: int):
-        action: Action = self.actions[index]
-        input_text = action.instruction
-        if self.use_raw_images:
-            input_image = Image.open(action.image_path)
-        else:
-            input_image = action.image_resnet_features
-        output_text = action.templated_command
-        return input_text, input_image, output_text
+        filename: str = self.filenames[index]
+        with open(self.root_dir / filename, 'rb') as f:
+            action: Action = pickle.load(f)
+        if self.clasp_mode:
+            return self._configure_action_info_for_clasp(action)
+
+    def _configure_action_info_for_baseline(self, action: Action) -> Tuple[str, Tensor, str]:
+        instruction: str = action.instruction
+        image_resnet_feats: Tensor = action.image_resnet_features
+        command: str = action.templated_command
+        return instruction, image_resnet_feats, command
+
+    def _configure_action_info_for_clasp(self, action: Action):
+        return {
+            # Instruction
+            "instruction": action.instruction,
+            "instruction_clip_feats": action.instruction_clip_features,
+            # Image
+            "image_clip_feats": action.image_clip_features,
+            # Command
+            "command": action.templated_command,
+            "command_clip_feats": action.command_clip_features
+        }
 
 
 class EvalAlfredHLActionDataset(AlfredHLActionDataset):
@@ -69,25 +85,21 @@ class EvalAlfredHLActionDataset(AlfredHLActionDataset):
     def __getitem__(self, item: int) -> Action:
         return self.actions[item]
 
-def collate_with_raw_images(batch):
-    input_texts, images, output_texts = zip(*batch)
-    return list(input_texts), list(images), list(output_texts)
 
-
-def get_train_and_val_dataloaders(batch_size: int, use_raw_images: bool = False, num_workers: int = 1,
+def get_train_and_val_dataloaders(batch_size: int, clasp_mode: bool = False, num_workers: int = 1,
                                   train_fraction: float = 1.) -> Tuple[DataLoader, DataLoader]:
-    train_dataset = AlfredHLActionDataset('alfred/data/json_feat_2.1.0/train',
-                                          use_raw_images=use_raw_images, fraction=train_fraction)
-    val_seen_dataset = AlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen',
-                                             use_raw_images=use_raw_images)
+    train_dataset = AlfredHLActionDataset(REPO_ROOT / 'alfred/data/json_feat_2.1.0/train',
+                                          clasp_mode=clasp_mode, fraction=train_fraction)
+    val_seen_dataset = AlfredHLActionDataset(REPO_ROOT / 'alfred/data/json_feat_2.1.0/valid_seen',
+                                             clasp_mode=clasp_mode)
     print(f"Split sizes: train={len(train_dataset)}, val_seen={len(val_seen_dataset)}")
 
     train_dataloader = DataLoader(train_dataset,
-                                  collate_fn=collate_with_raw_images if use_raw_images else None,
+                                  # collate_fn=collate_with_ if clasp_mode else None,
                                   batch_size=batch_size, num_workers=num_workers,
                                   drop_last=True, shuffle=True)
     val_seen_dataloader = DataLoader(val_seen_dataset,
-                                     collate_fn=collate_with_raw_images if use_raw_images else None,
+                                     # collate_fn=collate_with_ if clasp_mode else None,
                                      batch_size=batch_size, num_workers=num_workers,
                                      drop_last=True)
     return train_dataloader, val_seen_dataloader

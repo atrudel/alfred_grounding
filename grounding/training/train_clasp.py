@@ -37,7 +37,7 @@ def launch_training(args: Namespace):
     )
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=args.batch_size,
-        use_raw_images=True,
+        clasp_mode=True,
         num_workers=args.num_workers,
         train_fraction=0.01 if args.debug else 1.
     )

@@ -14,8 +14,10 @@ parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
 parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to run')
 parser.add_argument('--eval_every', type=int, default=200, help='Nb of update steps between evaluations')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')
-parser.add_argument('--debug', action='store_true')
 parser.add_argument('--num_workers', type=int, default=1, help='Number of workers used in the data loaders.')
+
+parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
+parser.add_argument('--profiler', action='store_true', help='Use a profiler to find bottlenecks in the code.')
 
 parser.add_argument('--z_size', type=int, default=512, help='Size of the z embedding.')
 parser.add_argument('--beta_caption', type=float, default=1., help='Coefficient for the captioning loss component.')
@@ -45,7 +47,8 @@ def launch_training(args: Namespace):
         fast_dev_run=True if args.debug else False,
         max_epochs=args.epochs,
         # gradient_clip_val=1.,     #Todo: Gradient clipping?
-        detect_anomaly=True
+        detect_anomaly=True,
+        profiler="simple" if args.profiler else None
     )
     trainer.fit(
         model=clasp_model,

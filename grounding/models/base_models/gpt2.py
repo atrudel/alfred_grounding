@@ -29,13 +29,13 @@ class PrefixGPT2Model(nn.Module):
         input_attention_mask: Tensor = torch.cat([
             torch.ones(prefix_embeddings.shape[:2]),
             target_tokenized.attention_mask
-        ], dim=1)
+        ], dim=1).to(DEVICE)
 
         # Prepare labels (ignoring the prefix)
         labels = torch.cat([
             torch.full(size=prefix_embeddings.shape[:2], fill_value=-100),
             target_tokenized.input_ids
-        ], dim=1)
+        ], dim=1).to(DEVICE)
 
         output: CausalLMOutputWithCrossAttentions = self.model(
             inputs_embeds=input_embeddings,

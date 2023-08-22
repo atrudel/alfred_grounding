@@ -1,4 +1,7 @@
-from typing import List
+from typing import List, Union
+
+import numpy as np
+
 from config import DEVICE
 from torch import Tensor
 from torch import nn
@@ -24,7 +27,7 @@ class CLIPModelFrozen(nn.Module):
         for param in self.image_encoder.parameters():
             param.requires_grad = False
 
-    def encode_texts(self, text: List[str], padding: bool = True) -> Tensor:
+    def encode_texts(self, text: Union[str, List[str]], padding: bool = True) -> Tensor:
         """Tokenizes and encodes a batch of strings and returns the batched embeddings"""
         inputs = self.tokenizer(text, padding=padding, return_tensors="pt")
         outputs = self.text_encoder(
@@ -33,7 +36,7 @@ class CLIPModelFrozen(nn.Module):
         )
         return outputs.text_embeds
 
-    def encode_images(self, images: List[Tensor]) -> Tensor:
+    def encode_images(self, images: Union[np.ndarray, List[Tensor]]) -> Tensor:
         """Processes and encodes a batch of images and returns the batched embeddings"""
         inputs = self.image_processor(images, return_tensors='pt')
         outputs = self.image_encoder(

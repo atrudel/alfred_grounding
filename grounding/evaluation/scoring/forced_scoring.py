@@ -54,7 +54,7 @@ def compute_forced_losses(action: Action, model: ImageConditionedLLMOnDecoder):
         [action.instruction] * n_candidates,
         return_tensors='pt'
     )
-    image_features: Tensor = action.image_features.unsqueeze(0).repeat(n_candidates, 1, 1)
+    image_features: Tensor = action.image_resnet_features.unsqueeze(0).repeat(n_candidates, 1, 1)
     decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = model.prepare_decoder_input_output_data(
         image_features, candidate_output_texts)
     with torch.no_grad():

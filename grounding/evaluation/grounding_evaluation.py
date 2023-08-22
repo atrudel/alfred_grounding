@@ -33,10 +33,10 @@ class GroundingTest:
         self.object_unrelated: Object = Object(object_unrelated)
         assert "{object}" in instruction_template, "Instruction template must contain the placeholder '{object}'"
         self.instruction_template: str = instruction_template
-        self.situations_1: List[Action] = [action.load_image() for action in actions_1]
-        self.situations_2: List[Action] = [action.load_image() for action in actions_2]
-        self.situations_both: List[Action] = [action.load_image() for action in actions_both]
-        self.situations_unrelated: List[Action] = [action.load_image() for action in actions_unrelated]
+        self.situations_1: List[Action] = [action.load_and_store_image() for action in actions_1]
+        self.situations_2: List[Action] = [action.load_and_store_image() for action in actions_2]
+        self.situations_both: List[Action] = [action.load_and_store_image() for action in actions_both]
+        self.situations_unrelated: List[Action] = [action.load_and_store_image() for action in actions_unrelated]
 
     def launch(self, model: ImageConditionedLLMOnDecoder) -> pd.DataFrame:
         output_objects: List[Object] = [self.object_1, self.object_2, self.object_unrelated]

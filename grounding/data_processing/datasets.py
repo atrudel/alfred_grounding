@@ -16,7 +16,7 @@ class AlfredHLActionDataset(Dataset):
         self.root_dir: Path = Path(root_dir)
         print(f"Loading dataset from {root_dir}...", end='')
         with open(self.root_dir / high_level_action_dump_filename, 'rb') as f:
-            full_data: List[Action] = pickle.load(f)
+            full_data: List[Action] = pickle.load(f) # Todo: load individual task
         print('done.')
         self.actions: List[Action] = full_data[:int(len(full_data) * fraction)]
         self.debug: bool = debug
@@ -31,8 +31,8 @@ class AlfredHLActionDataset(Dataset):
         if self.use_raw_images:
             input_image = Image.open(action.image_path)
         else:
-            input_image = action.image_features
-        output_text = action.templated_string
+            input_image = action.image_resnet_features
+        output_text = action.templated_command
         return input_text, input_image, output_text
 
 

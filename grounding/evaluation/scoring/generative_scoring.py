@@ -21,12 +21,12 @@ def compute_generative_accuracy_for_action(action: Action,
     input_tokenized: BatchEncoding = model.tokenizer(action.instruction, return_tensors='pt')
 
     # Decoder input (e.g. "Pick up the")
-    decoder_input_text: str = action.templated_string.replace(f"{action.target_object.templated_string_form}. ", '')
+    decoder_input_text: str = action.templated_command.replace(f"{action.target_object.templated_string_form}. ", '')
     decoder_input_tokenized: BatchEncoding = model.tokenizer(decoder_input_text, return_tensors='pt')
     decoder_input_toks: Tensor = decoder_input_tokenized['input_ids'][:, :-1]
     decoder_input_att_mask: Tensor = decoder_input_tokenized['attention_mask'][:, :-1]
 
-    image_features: Tensor = action.image_features.unsqueeze(0)
+    image_features: Tensor = action.image_resnet_features.unsqueeze(0)
 
     output_texts, object_logits = model.generate(
         input_token_ids=input_tokenized['input_ids'],

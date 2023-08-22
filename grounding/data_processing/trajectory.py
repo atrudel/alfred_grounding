@@ -7,6 +7,7 @@ from torch import Tensor
 
 from grounding.data_processing.action import Action
 from grounding.data_processing.object import Object, bind_object, UnmatchedObjectException
+from models.base_models.clip import CLIPModelFrozen
 
 
 class Trajectory:
@@ -100,7 +101,7 @@ class Trajectory:
                 curr_high_lvl_idx: int = image_info['high_idx']
         return image_paths
 
-    def split_actions(self) -> List[Action]:
+    def split_actions(self, clip_model: CLIPModelFrozen) -> List[Action]:
         """Splits a trajectory into actions. Gets rid of the Stop action."""
         instructions: List[str] = self.annotation['high_descs']
         high_pddl_actions: List[dict] = self.pddl_plan['high_pddl'][:-1]
@@ -113,7 +114,8 @@ class Trajectory:
         actions = []
         for instr, pddl, img_feats, img_path in zip(instructions, high_pddl_actions, image_features, image_paths):
             try:
-                actions.append(Action(instr, pddl, img_feats, img_path, self.directory, self.repeat_idx, self.split))
+                actions.append(
+                    Action(instr, pddl, img_feats, img_path, clip_model, self.directory, self.repeat_idx, self.split))
             except UnmatchedObjectException:
                 print(f"Action with unknown object rejected: {pddl['discrete_action']['action']}({pddl['discrete_action']['args']})")
         return actions

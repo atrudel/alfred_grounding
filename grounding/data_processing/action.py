@@ -10,25 +10,42 @@ from matplotlib import pyplot as plt
 from torch import Tensor
 
 from grounding.data_processing.object import Object, bind_object, object_names
+from models.base_models.clip import CLIPModelFrozen
 
 
 class Action:
-    def __init__(self, instruction: str, pddl: dict, image_features: Tensor, img_path: Path, trajectory_path: Path,
-                 repeat_idx: int, split: str):
+    def __init__(self, instruction: str, pddl: dict, image_resnet_features: Tensor, img_path: Path,
+                 clip_model: CLIPModelFrozen, trajectory_path: Path, repeat_idx: int, split: str):
         self.id: Optional[int] = None
-        self.instruction: str = instruction
         self.pddl: dict = pddl
-        self.image_features: Tensor = image_features
-        self.image_path: Path = img_path
-        self.image: Optional[np.ndarray] = None
         self.trajectory_path: Path = trajectory_path
         self.repeat_idx: int = repeat_idx
         self.split: str = split
-
         self.type = pddl['discrete_action']['action']
         self.args = pddl['discrete_action']['args']
         self.target_object: Object = bind_object(self.args[0])
-        self.templated_string: str = self._make_templated_string(self.type, self.args)
+
+        # Instruction
+        self.instruction: str = instruction
+        self.instruction_clip_features: Tensor = self._extract_text_clip_features(instruction, clip_model)
+
+        # Image
+        self.image_path: Path = img_path
+        self.image: Optional[np.ndarray] = None
+        self.image_resnet_features: Tensor = image_resnet_features
+        self.image_clip_features: Tensor = self._extract_image_clip_features(img_path, clip_model)
+
+        # Command
+        self.templated_command: str = self._make_templated_string(self.type, self.args)
+        self.command_clip_features: Tensor = self._extract_text_clip_features(self.templated_command, clip_model)
+
+    def _extract_image_clip_features(self, image_path: Path, clip_model: CLIPModelFrozen) -> Tensor:
+        raw_image: np.ndarray = self.load_image(image_path)
+        return clip_model.encode_images(raw_image)
+
+    @staticmethod
+    def _extract_text_clip_features(text: str, clip_model: CLIPModelFrozen) -> Tensor:
+        return clip_model.encode_texts(text)
 
     @staticmethod
     def _make_templated_string(action_type: str, args: List[str]) -> str:
@@ -95,7 +112,7 @@ class Action:
         print(self)
         print(self.trajectory_path)
         print(f"INSTRUCTION: {self.instruction}")
-        print(f"COMMAND:     {self.templated_string}")
+        print(f"COMMAND:     {self.templated_command}")
         if image:
             try:
                 img: np.ndarray = skimage.io.imread(self.image_path)
@@ -107,12 +124,16 @@ class Action:
 
     def get_image(self) -> np.ndarray:
         if self.image is None:
-            self.load_image()
+            self.load_and_store_image()
         return self.image
 
-    def load_image(self) -> Action:
-        self.image = skimage.io.imread(self.image_path)
+    def load_and_store_image(self) -> Action:
+        self.image = self.load_image(self.image_path)
         return self
+
+    @staticmethod
+    def load_image(image_path: Path) -> np.ndarray:
+        return skimage.io.imread(image_path)
 
 
 class UnaccomplishedSubstitutionException(Exception):

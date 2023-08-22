@@ -19,6 +19,7 @@ class CLASP(L.LightningModule):
     def __init__(self, z_size: int, beta_align: float = 1, beta_caption: float = 1, beta_behavior_gen: float = 1,
                  temperature: float = 0.07, learning_rate: float = 1e-4, weightdecay: float = 0.01):
         super().__init__()
+        self.save_hyperparameters()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
         self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
@@ -50,6 +51,9 @@ class CLASP(L.LightningModule):
                                  eps=1e-08,
                                  weight_decay=self.weight_decay,
                                  amsgrad=False)
+
+    def predict_step(self, batch, batch_idx):
+        pass
 
     def _forward(self, actions: List[str], images: List[object], instructions: List[str]) -> float:
         loss_align: float = self._forward_align(instructions, images, actions)

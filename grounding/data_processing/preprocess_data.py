@@ -10,6 +10,7 @@ from tqdm import tqdm
 from grounding.data_processing.action import Action
 from grounding.data_processing.trajectory import Trajectory, InconsistentTrajectoryException
 from grounding.models.base_models.clip import CLIPModelFrozen
+from models.base_models.gpt2 import PrefixGPT2Model
 
 PREPROCESSED_ACTIONS_DIR_NAME: str = "preprocessed_actions"
 DATASET_ROOT: Path = "alfred/data/json_feat_2.1.0"
@@ -24,13 +25,13 @@ def preprocess_all_data(skip_train: bool = False):
         splits = ['train', 'valid_seen', 'valid_unseen']
     # Initialize CLIP model to preprocess images and text
     clip_model = CLIPModelFrozen()
+    gpt_model = PrefixGPT2Model()
     for split in splits:
-        preprocess_split_in_high_level_actions(DATASET_ROOT, split,
-                                               trajectories_by_splits, clip_model)
+        preprocess_split_in_high_level_actions(DATASET_ROOT, split, trajectories_by_splits, clip_model, gpt_model)
 
 
 def preprocess_split_in_high_level_actions(dataset_root: str, split: str, trajectories_by_splits: Dict[str, List[dict]],
-                                           clip_model: CLIPModelFrozen):
+                                           clip_model: CLIPModelFrozen, gpt_model: PrefixGPT2Model):
     split_root_path: Path = Path(dataset_root) / split
     dump_dir: Path = split_root_path / PREPROCESSED_ACTIONS_DIR_NAME
     os.makedirs(dump_dir, exist_ok=True)
@@ -43,7 +44,7 @@ def preprocess_split_in_high_level_actions(dataset_root: str, split: str, trajec
         traj_dir: Path = split_root_path / traj['task']
         trajectory: Trajectory = Trajectory(traj_dir, traj['repeat_idx'], split)
         try:
-            actions: List[Action] = trajectory.split_actions(clip_model)
+            actions: List[Action] = trajectory.split_actions(clip_model, gpt_model)
             for action in actions:
                 action.assign_id(count)
                 count += 1

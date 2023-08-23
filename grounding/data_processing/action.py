@@ -8,14 +8,16 @@ import numpy as np
 import skimage
 from matplotlib import pyplot as plt
 from torch import Tensor
+from transformers import BatchEncoding
 
 from grounding.data_processing.object import Object, bind_object, object_names
 from grounding.models.base_models.clip import CLIPModelFrozen
+from models.base_models.gpt2 import PrefixGPT2Model
 
 
 class Action:
     def __init__(self, instruction: str, pddl: dict, image_resnet_features: Tensor, img_path: Path,
-                 clip_model: CLIPModelFrozen, trajectory_path: Path, repeat_idx: int, split: str):
+                 clip_model: CLIPModelFrozen, gpt_model, trajectory_path: Path, repeat_idx: int, split: str):
         self.id: Optional[int] = None
         self.pddl: dict = pddl
         self.trajectory_path: Path = trajectory_path
@@ -28,6 +30,7 @@ class Action:
         # Instruction
         self.instruction: str = instruction
         self.instruction_clip_features: Tensor = self._extract_text_clip_features(instruction, clip_model)
+        self.instruction_gpt_encoded: BatchEncoding = self._encode_text_for_gpt(instruction, gpt_model)
 
         # Image
         self.image_path: Path = img_path
@@ -38,6 +41,7 @@ class Action:
         # Command
         self.templated_command: str = self._make_templated_string(self.type, self.args)
         self.command_clip_features: Tensor = self._extract_text_clip_features(self.templated_command, clip_model)
+        self.command_gpt_encoded: BatchEncoding = self._encode_text_for_gpt(self.templated_command, gpt_model)
 
     def _extract_image_clip_features(self, image_path: Path, clip_model: CLIPModelFrozen) -> Tensor:
         raw_image: np.ndarray = self.load_image(image_path)
@@ -46,6 +50,10 @@ class Action:
     @staticmethod
     def _extract_text_clip_features(text: str, clip_model: CLIPModelFrozen) -> Tensor:
         return clip_model.encode_texts(text)
+
+    @staticmethod
+    def _encode_text_for_gpt(text: str, gpt_model: PrefixGPT2Model) -> BatchEncoding:
+        return gpt_model.tokenizer(text, return_tensors='pt')
 
     @staticmethod
     def _make_templated_string(action_type: str, args: List[str]) -> str:

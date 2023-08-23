@@ -8,6 +8,7 @@ from torch import Tensor
 from grounding.data_processing.action import Action
 from grounding.data_processing.object import Object, bind_object, UnmatchedObjectException
 from grounding.models.base_models.clip import CLIPModelFrozen
+from models.base_models.gpt2 import PrefixGPT2Model
 
 
 class Trajectory:
@@ -101,8 +102,11 @@ class Trajectory:
                 curr_high_lvl_idx: int = image_info['high_idx']
         return image_paths
 
-    def split_actions(self, clip_model: CLIPModelFrozen) -> List[Action]:
-        """Splits a trajectory into actions. Gets rid of the Stop action."""
+    def split_actions(self, clip_model: CLIPModelFrozen, gpt_model: PrefixGPT2Model) -> List[Action]:
+        """
+        Splits a trajectory into actions. Gets rid of the Stop action.
+        Perform the pre-processing relative to the various models used in the project.
+        """
         instructions: List[str] = self.annotation['high_descs']
         high_pddl_actions: List[dict] = self.pddl_plan['high_pddl'][:-1]
         image_features: List[Tensor] = self.image_features[:-1]
@@ -115,7 +119,8 @@ class Trajectory:
         for instr, pddl, img_feats, img_path in zip(instructions, high_pddl_actions, image_features, image_paths):
             try:
                 actions.append(
-                    Action(instr, pddl, img_feats, img_path, clip_model, self.directory, self.repeat_idx, self.split))
+                    Action(instr, pddl, img_feats, img_path, clip_model, gpt_model, self.directory, self.repeat_idx,
+                           self.split))
             except UnmatchedObjectException:
                 print(f"Action with unknown object rejected: {pddl['discrete_action']['action']}({pddl['discrete_action']['args']})")
         return actions

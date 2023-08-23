@@ -9,8 +9,7 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils import ModelOutput
 
 from config import DEVICE
-from data_processing.action import Action
-from data_processing.action_loader import load_preprocessed_action
+from grounding.data_processing.action import Action
 from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
 from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixTuningBehaviorGenerator
 from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner

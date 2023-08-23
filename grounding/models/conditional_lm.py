@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from transformers import T5ForConditionalGeneration, T5Tokenizer, T5TokenizerFast, BatchEncoding
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
-from data_processing.action import Action
+from grounding.data_processing.action import Action
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

@@ -7,7 +7,7 @@ from torch import Tensor
 
 from grounding.data_processing.action import Action
 from grounding.data_processing.object import Object, bind_object, UnmatchedObjectException
-from models.base_models.clip import CLIPModelFrozen
+from grounding.models.base_models.clip import CLIPModelFrozen
 
 
 class Trajectory:

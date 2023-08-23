@@ -7,10 +7,9 @@ from typing import List, Dict
 
 from tqdm import tqdm
 
-from config import REPO_ROOT
 from grounding.data_processing.action import Action
 from grounding.data_processing.trajectory import Trajectory, InconsistentTrajectoryException
-from models.base_models.clip import CLIPModelFrozen
+from grounding.models.base_models.clip import CLIPModelFrozen
 
 PREPROCESSED_ACTIONS_DIR_NAME: str = "preprocessed_actions"
 DATASET_ROOT: Path = "alfred/data/json_feat_2.1.0"

@@ -4,7 +4,7 @@ from torch import nn, Tensor
 
 from config import DEVICE
 from grounding.models.clasp.encoders.variational_encoder import VariationalEncoder
-from models.base_models.clip import CLIP_EMBEDDING_SIZE
+from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
 
 
 class TextEncoder(nn.Module):

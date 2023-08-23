@@ -8,7 +8,7 @@ from torch import Tensor
 from grounding.data_processing.action import Action
 from grounding.data_processing.object import Object, bind_object, UnmatchedObjectException
 from grounding.models.base_models.clip import CLIPModelFrozen
-from models.base_models.gpt2 import PrefixGPT2Model
+from grounding.models.base_models.gpt2 import PrefixGPT2Model
 
 
 class Trajectory:

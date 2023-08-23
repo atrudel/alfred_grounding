@@ -10,7 +10,7 @@ from tqdm import tqdm
 from grounding.data_processing.action import Action
 from grounding.data_processing.trajectory import Trajectory, InconsistentTrajectoryException
 from grounding.models.base_models.clip import CLIPModelFrozen
-from models.base_models.gpt2 import PrefixGPT2Model
+from grounding.models.base_models.gpt2 import PrefixGPT2Model
 
 PREPROCESSED_ACTIONS_DIR_NAME: str = "preprocessed_actions"
 DATASET_ROOT: Path = "alfred/data/json_feat_2.1.0"

@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from torch import Tensor
 
 from grounding.data_processing.object import Object, bind_object, object_names
-from models.base_models.clip import CLIPModelFrozen
+from grounding.models.base_models.clip import CLIPModelFrozen
 
 
 class Action:

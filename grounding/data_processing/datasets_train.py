@@ -7,7 +7,7 @@ from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
 
 from config import REPO_ROOT
-from data_processing.preprocess_data import PREPROCESSED_ACTIONS_DIR_NAME
+from grounding.data_processing.preprocess_data import PREPROCESSED_ACTIONS_DIR_NAME
 from grounding.data_processing.action import Action
 
 

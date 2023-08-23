@@ -3,8 +3,8 @@ import pickle
 from pathlib import Path
 from typing import List, Optional
 
-from data_processing.action import Action
-from data_processing.preprocess_data import DATASET_ROOT, PREPROCESSED_ACTIONS_DIR_NAME
+from grounding.data_processing.action import Action
+from grounding.data_processing.preprocess_data import DATASET_ROOT, PREPROCESSED_ACTIONS_DIR_NAME
 
 
 def load_preprocessed_action(split: str, id: int) -> Optional[Action]:

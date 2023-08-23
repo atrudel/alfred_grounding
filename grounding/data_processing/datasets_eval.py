@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import Optional, List, Dict
 
-from data_processing.action import Action
-from data_processing.datasets_train import AlfredHLActionDataset
+from grounding.data_processing.action import Action
+from grounding.data_processing.datasets_train import AlfredHLActionDataset
 
 
 class EvalAlfredHLActionDataset(AlfredHLActionDataset):

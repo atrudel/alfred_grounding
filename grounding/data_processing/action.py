@@ -75,7 +75,7 @@ class Action:
             templated_str = "<<STOP>>"
         return templated_str
 
-    def make_classification_strings(self):
+    def make_command_options_for_all_objects(self):
         # Todo: Handle receptacle objects too
         return [self._make_templated_string(self.type, [object_name] + self.args[1:])
                 for object_name in object_names]
@@ -102,7 +102,7 @@ class Action:
             'valid_seen': 'VSEEN',
             'valid_unseen': 'VUNSEEN'
         }
-        return f"Act_{split_abbreviations[self.split]}_{self.id}_{self.type}({self.args})"
+        return f"Act_{split_abbreviations[self.split]}_{self.id:0>6}_{self.type}({self.args})"
 
     def __repr__(self) -> str:
         return self.__str__()

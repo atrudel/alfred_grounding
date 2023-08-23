@@ -14,10 +14,11 @@ from grounding.data_processing.action import Action
 class AlfredHLActionDataset(Dataset):
     """Dataset of high level actions used to train models in teacher forcing."""
     def __init__(self, root_dir: str, clasp_mode: bool = False, fraction: float = 1, debug: bool = False):
+        super().__init__()
         self.root_dir: Path = Path(root_dir) / PREPROCESSED_ACTIONS_DIR_NAME
 
         print(f"Loading dataset from {root_dir}...", end='')
-        all_filenames = os.listdir(self.root_dir)
+        all_filenames = sorted(os.listdir(self.root_dir))
         self.filenames = all_filenames[:int(len(all_filenames) * fraction)]
         self.debug: bool = debug
         self.clasp_mode: bool = clasp_mode
@@ -26,13 +27,17 @@ class AlfredHLActionDataset(Dataset):
         return len(self.filenames)
 
     def __getitem__(self, index: int):
-        filename: str = self.filenames[index]
-        with open(self.root_dir / filename, 'rb') as f:
-            action: Action = pickle.load(f)
+        action = self.get_action(index)
         if self.clasp_mode:
             return self._configure_action_info_for_clasp(action)
         else:
             return self._configure_action_info_for_baseline(action)
+
+    def get_action(self, index) -> Action:
+        filename: str = self.filenames[index]
+        with open(self.root_dir / filename, 'rb') as f:
+            action: Action = pickle.load(f)
+        return action
 
     def _configure_action_info_for_baseline(self, action: Action) -> Tuple[str, Tensor, str]:
         instruction: str = action.instruction

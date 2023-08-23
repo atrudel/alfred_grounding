@@ -1,7 +1,7 @@
 from typing import Callable, List
 
-from grounding.evaluation.scoring.generative_scoring import compute_generative_accuracy_for_action
-from grounding.evaluation.scoring.forced_scoring import compute_forced_metrics_for_single_action
+from grounding.evaluation.scoring_methods.generative_scoring import compute_generative_accuracy_for_action
+from grounding.evaluation.scoring_methods.forced_scoring import compute_forced_metrics_for_single_action
 
 
 def get_mode_scorer(mode: str) -> Callable:

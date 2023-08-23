@@ -1,25 +1,21 @@
-import argparse
 import os
 import pickle
 from pathlib import Path
 from typing import List, Dict
 
-import matplotlib.pyplot as plt
 import pandas as pd
-import torch.cuda
 import yaml
 from datatest import working_directory
+from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
+from torch import nn
 from tqdm import tqdm
 
-from grounding.data_processing.action import Action
+from data_processing.action import Action
 from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from grounding.data_processing.object import Object
-from grounding.evaluation.scoring.forced_scoring import compute_forced_metrics_for_ambiguous_situation
-from grounding.evaluation.utils import parse_eval_args, mean, object_counts
-from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
+from data_processing.object import Object
+from evaluation.scoring_methods.forced_scoring import compute_forced_metrics_for_ambiguous_situation
+from evaluation.utils import mean, object_counts
 
 
 class GroundingTest:
@@ -38,7 +34,7 @@ class GroundingTest:
         self.situations_both: List[Action] = [action.load_and_store_image() for action in actions_both]
         self.situations_unrelated: List[Action] = [action.load_and_store_image() for action in actions_unrelated]
 
-    def launch(self, model: ImageConditionedLLMOnDecoder) -> pd.DataFrame:
+    def launch(self, model: nn.Module) -> pd.DataFrame:
         output_objects: List[Object] = [self.object_1, self.object_2, self.object_unrelated]
         mrr_column_names: List[str] = [f"MRR_{object.name}" for object in output_objects]
         top_object_column_names: List[str] = ["Top_object"]
@@ -117,6 +113,9 @@ class GroundingTest:
 
 
 def build_grounding_tests() -> List[GroundingTest]:
+    """
+    Build a list of GroundingTest instances based on the content of the grounding_tests.yaml file.
+    """
     def extract_actions(action_numbers: Dict[str, List[int]]) -> List[Action]:
         valid_seen_actions = data_valid_seen.get_actions_by_indices(action_numbers.get('valid_seen', []))
         valid_unseen_actions = data_valid_unseen.get_actions_by_indices(action_numbers.get('valid_unseen', []))
@@ -131,34 +130,14 @@ def build_grounding_tests() -> List[GroundingTest]:
 
     return [
         GroundingTest(title=test_info['title'],
-                       object_1=test_info['object_1'],
-                       object_2=test_info['object_2'],
-                       generic_name=test_info['generic_name'],
-                       object_unrelated=test_info['object_unrelated'],
-                       instruction_template=test_info['instruction_template'],
-                       actions_1=extract_actions(test_info['actions_1']),
-                       actions_2=extract_actions(test_info['actions_2']),
-                       actions_both=extract_actions(test_info['actions_both']),
-                       actions_unrelated=extract_actions(test_info['actions_unrelated']))
+                      object_1=test_info['object_1'],
+                      object_2=test_info['object_2'],
+                      generic_name=test_info['generic_name'],
+                      object_unrelated=test_info['object_unrelated'],
+                      instruction_template=test_info['instruction_template'],
+                      actions_1=extract_actions(test_info['actions_1']),
+                      actions_2=extract_actions(test_info['actions_2']),
+                      actions_both=extract_actions(test_info['actions_both']),
+                      actions_unrelated=extract_actions(test_info['actions_unrelated']))
         for test_info in grounding_tests_info
     ]
-
-
-if __name__ == '__main__':
-    args: argparse.Namespace = parse_eval_args()
-    save_dir: Path = args.model_dir / 'grounding_evaluation'
-    os.makedirs(save_dir, exist_ok=True)
-
-    print("Loading data...")
-    grounding_tests: List[GroundingTest] = build_grounding_tests()
-
-    print("Loading model...")
-    model = ImageConditionedLLMOnDecoder.load(args.model_path).to(device)
-
-    for grounding_test in grounding_tests:
-        print(f"Launching grounding test: {grounding_test.title}")
-        results: pd.DataFrame = grounding_test.launch(model)
-        save_path: Path = save_dir / f"{str(grounding_test)}.csv"
-        results.to_csv(save_path)
-        print(f"Results saved to {save_path}")
-

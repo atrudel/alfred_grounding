@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from grounding.data_processing.action import Action, UnaccomplishedSubstitutionException
 from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from grounding.evaluation.scoring.forced_scoring import compute_forced_metrics_for_single_action
+from grounding.evaluation.scoring_methods.forced_scoring import compute_forced_metrics_for_single_action
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
 device = "cuda" if torch.cuda.is_available() else "cpu"

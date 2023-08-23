@@ -3,7 +3,9 @@ from typing import Optional, Tuple, List
 import torch
 from torch import nn, Tensor
 from transformers import T5ForConditionalGeneration, T5Tokenizer, T5TokenizerFast, BatchEncoding
+from transformers.modeling_outputs import Seq2SeqLMOutput
 
+from data_processing.action import Action
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -113,6 +115,36 @@ class ImageConditionedLLMOnDecoder(nn.Module):
 
         return decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks
 
+    def evaluate_command_generation_on_all_object_options(self,
+                                                          action: Action,
+                                                          candidate_output_texts: List[str]
+                                                          ) -> Tuple[Tensor, Tensor]:
+        """
+        The model scores all candidate commands in order to figure out which one is preferred.
+        :param action: Action object associated with the action being tested
+        :param candidate_output_texts: Command options will all permutations of the objec of interaction
+        :return: logits Tensor
+        """
+        n_candidates = len(candidate_output_texts)
+        input_tokenized: BatchEncoding = self.tokenizer(
+            [action.instruction] * n_candidates,
+            return_tensors='pt'
+        )
+        image_features: Tensor = action.image_resnet_features.unsqueeze(0).repeat(n_candidates, 1, 1)
+        decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks = self.prepare_decoder_input_output_data(
+            image_features, candidate_output_texts
+        )
+        with torch.no_grad():
+            output: Seq2SeqLMOutput = self.forward(
+                input_token_ids=input_tokenized['input_ids'].to(device),
+                input_att_mask=input_tokenized['attention_mask'].to(device),
+                decoder_input_token_ids=decoder_input_toks.to(device),
+                decoder_input_att_mask=decoder_input_att_mask.to(device),
+                image_features=decoder_image_features.to(device),
+                output_token_ids=output_toks.to(device)
+            )
+        logits: Tensor = output.logits
+        return logits, output_toks
 
 
     @classmethod

@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from grounding.data_processing.action import Action
 from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from grounding.evaluation.scoring.mode_selection import get_mode_metrics, get_mode_scorer
+from grounding.evaluation.scoring_methods.mode_selection import get_mode_metrics, get_mode_scorer
 from grounding.evaluation.utils import parse_eval_args, announce_start_evaluation
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
@@ -97,10 +97,10 @@ if __name__ == '__main__':
     print("Loading data...")
     datasets: List[Tuple[str, EvalAlfredHLActionDataset]] = []
     if args.train is True:
-        datasets += [('train',EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/train', debug=args.debug))]
+        datasets += [('train', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/train'))]
     datasets += [
-        ('valid_seen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen', debug=args.debug)),
-        ('valid_unseen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen', debug=args.debug))
+        ('valid_seen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen')),
+        ('valid_unseen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen'))
     ]
 
     print("Loading model...")

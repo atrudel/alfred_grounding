@@ -1,13 +1,16 @@
-from typing import List
+from typing import List, Tuple
 
 import lightning as L
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
+from transformers import BatchEncoding
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from transformers.utils import ModelOutput
 
 from config import DEVICE
+from data_processing.action import Action
+from data_processing.action_loader import load_preprocessed_action
 from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
 from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixTuningBehaviorGenerator
 from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
@@ -40,7 +43,6 @@ class CLASP(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss = self._forward(batch)
         self.log("val_loss", loss)
-
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(),
@@ -105,10 +107,47 @@ class CLASP(L.LightningModule):
         loss = (loss_text + loss_behav) / 2
         return loss
 
-
     def reparametrization_trick(self, means, log_vars):
         # Todo: log_vars or vars
         stds = torch.exp(0.5 * log_vars)
         eps = torch.randn_like(stds)
         z = eps * stds + means
         return z
+
+    def evaluate_command_generation_on_all_object_options(self,
+                                                          action: Action,
+                                                          candidate_output_texts: List[str]
+                                                          ) -> Tuple[Tensor, Tensor]:
+        """
+        The model scores all candidate commands in order to figure out which one is preferred.
+        :param action: Action object associated with the action being tested
+        :param candidate_output_texts: Command options will all permutations of the objec of interaction
+        :return: logits Tensor
+        """
+        n_candidates = len(candidate_output_texts)
+        z_instruction = self.reparametrization_trick(*self.instruction_encoder(
+            action.instruction_clip_features
+        ))
+        batched_z: Tensor = z_instruction.repeat(n_candidates, 1) # [n, 512]
+        batched_image_feats: Tensor = action.image_clip_features.repeat(n_candidates, 1) # [n, 512]
+        with torch.no_grad():
+            output: ModelOutput = self.behavior_generator(
+                batched_z,
+                batched_image_feats,
+                candidate_output_texts
+            )
+        logits: Tensor = output.logits
+
+        ouput_tokenized: BatchEncoding = self.behavior_generator.gpt.tokenizer(
+            candidate_output_texts, return_tensors='pt',
+            padding="max_length", max_length=logits.shape[1]
+        )
+        output_toks: Tensor = ouput_tokenized["input_ids"]
+        return logits, output_toks
+
+
+
+
+
+
+

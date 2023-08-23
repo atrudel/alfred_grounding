@@ -38,7 +38,7 @@ def compute_forced_metrics_for_ambiguous_situation(action: Action,
                                                    model: nn.Module,
                                                    tested_objects: List[Object]
                                                    ) -> Tuple[List[float], str]:
-    _,  losses = compute_forced_losses(action, model)
+    _, losses = compute_forced_losses(action, model)
     mrrs: List[float] = [reciprocal_rank(losses, object.index) for object in tested_objects]
     most_likely_index: int = losses.argmin().item()
     most_likely_object: str = object_names[most_likely_index]

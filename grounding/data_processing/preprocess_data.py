@@ -13,7 +13,7 @@ from grounding.data_processing.trajectory import Trajectory, InconsistentTraject
 from models.base_models.clip import CLIPModelFrozen
 
 PREPROCESSED_ACTIONS_DIR_NAME: str = "preprocessed_actions"
-DATASET_ROOT: Path = REPO_ROOT / "alfred/data/json_feat_2.1.0"
+DATASET_ROOT: Path = "alfred/data/json_feat_2.1.0"
 
 
 def preprocess_all_data(skip_train: bool = False):

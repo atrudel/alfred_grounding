@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 import torch
 
-from grounding.data_processing.datasets import EvalAlfredHLActionDataset
+from data_processing.datasets_eval import EvalAlfredHLActionDataset
 from grounding.evaluation.evaluate_object_selection import evaluate_object_substitution_by_object
 from grounding.evaluation.baseline_evaluation import score_object_selection_by_action_type
 from grounding.evaluation.scoring.generative_scoring import compute_generative_accuracy_for_action

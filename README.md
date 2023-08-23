@@ -18,7 +18,7 @@ Language grounding experiments on the Alfred dataset
     ```
 2. Launch training
    ```bash
-   python grounding/training/train.py --name experiment_name
+   python grounding/training/train_baseline.py --name experiment_name
    ```
 
 ## Evaluation

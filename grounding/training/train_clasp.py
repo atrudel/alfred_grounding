@@ -3,7 +3,7 @@ from argparse import Namespace
 
 from lightning import Trainer
 
-from grounding.data_processing.datasets import get_train_and_val_dataloaders
+from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.clasp.clasp import CLASP
 
 parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')

@@ -8,7 +8,7 @@ import torch
 from tqdm import tqdm
 
 from grounding.data_processing.action import Action, UnaccomplishedSubstitutionException
-from grounding.data_processing.datasets import EvalAlfredHLActionDataset
+from data_processing.datasets_eval import EvalAlfredHLActionDataset
 from grounding.evaluation.scoring.forced_scoring import compute_forced_metrics_for_single_action
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 

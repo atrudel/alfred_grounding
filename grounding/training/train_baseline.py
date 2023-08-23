@@ -14,7 +14,7 @@ from tqdm import tqdm
 from transformers import BatchEncoding
 from transformers.modeling_outputs import Seq2SeqLMOutput
 
-from grounding.data_processing.datasets import get_train_and_val_dataloaders
+from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
 MODEL_SAVE_FILENAME = 'checkpoint.pth.tar'
@@ -55,6 +55,8 @@ def announce_start_training(args: argparse.Namespace) -> None:
     print('Learning rate = ', args.lr)
     print('Device: ', device)
     print('Use_image: ', not args.no_image)
+    if args.debug:
+        print('DEBUG MODE')
     print('##############################')
 
 
@@ -118,8 +120,12 @@ def launch_training(args: Namespace):
 
     print("Loading data...")
     train_fraction = 0.05 if args.debug else 1.0
-    train_dataloader, val_seen_dataloader = get_train_and_val_dataloaders(args.batch_size,
-                                                                          train_fraction=train_fraction)
+    train_dataloader, val_seen_dataloader = get_train_and_val_dataloaders(
+        batch_size=args.batch_size,
+        clasp_mode=False,
+        num_workers=1,
+        train_fraction=train_fraction
+    )
     result_path, log_path = setup_logging(args)
     writer = SummaryWriter(str(log_path))
     announce_start_training(args)

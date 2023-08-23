@@ -1,8 +1,7 @@
 import os
 import pickle
-from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Dict, Optional
+from typing import Tuple
 
 from torch import Tensor
 from torch.utils.data import Dataset, DataLoader
@@ -32,6 +31,8 @@ class AlfredHLActionDataset(Dataset):
             action: Action = pickle.load(f)
         if self.clasp_mode:
             return self._configure_action_info_for_clasp(action)
+        else:
+            return self._configure_action_info_for_baseline(action)
 
     def _configure_action_info_for_baseline(self, action: Action) -> Tuple[str, Tensor, str]:
         instruction: str = action.instruction
@@ -52,40 +53,6 @@ class AlfredHLActionDataset(Dataset):
         }
 
 
-class EvalAlfredHLActionDataset(AlfredHLActionDataset):
-    """Dataset of high level actions used to evaluate models in grounding."""
-    debug_max_actions = 5
-
-    def get_actions_by_objects(self, action_types: Optional[List[str]] = None, no_repeat: bool = True) -> Dict[str, List[Action]]:
-        actions_by_objects: defaultdict = defaultdict(list)
-        for action in self.actions:
-            if no_repeat and action.repeat_idx != 0:
-                continue
-            if action_types and action.type not in action_types:
-                continue
-            if self.debug and len(actions_by_objects[action.target_object.name]) >= self.debug_max_actions:
-                continue
-            actions_by_objects[action.target_object.name].append(action)
-        return actions_by_objects
-
-    def get_actions_by_type(self) -> Dict[str, List[Action]]:
-        actions_by_type: defaultdict = defaultdict(list)
-        for action in self.actions:
-            if self.debug and len(actions_by_type[action.type]) >= self.debug_max_actions:
-                continue
-            actions_by_type[action.type].append(action)
-        return actions_by_type
-
-    def get_actions_by_indices(self, indices: List[int]) -> List[Action]:
-        return [self[index] for index in indices]
-
-    def inspect_action(self, index: int) -> None:
-        self.actions[index].show()
-
-    def __getitem__(self, item: int) -> Action:
-        return self.actions[item]
-
-
 def get_train_and_val_dataloaders(batch_size: int, clasp_mode: bool = False, num_workers: int = 1,
                                   train_fraction: float = 1.) -> Tuple[DataLoader, DataLoader]:
     train_dataset = AlfredHLActionDataset(REPO_ROOT / 'alfred/data/json_feat_2.1.0/train',
@@ -103,3 +70,13 @@ def get_train_and_val_dataloaders(batch_size: int, clasp_mode: bool = False, num
                                      batch_size=batch_size, num_workers=num_workers,
                                      drop_last=True)
     return train_dataloader, val_seen_dataloader
+
+if __name__ == '__main__':
+    train_dataloader, val_seen_dataloader = get_train_and_val_dataloaders(
+        batch_size=12,
+        clasp_mode=False,
+        num_workers=1,
+        train_fraction=1
+    )
+    action_0 = train_dataloader.dataset[0]
+    a=1

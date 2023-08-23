@@ -10,7 +10,7 @@ class BehaviorGeneratingDecoder(nn.Module, metaclass=abc.ABCMeta):
         super().__init__()
 
     @abc.abstractmethod
-    def forward(self, z, images, labels):
+    def forward(self, z, images, command_labels):
         raise NotImplementedError
 
 
@@ -19,5 +19,5 @@ class CaptioningDecoder(nn.Module, metaclass=abc.ABCMeta):
         super().__init__()
 
     @abc.abstractmethod
-    def forward(self, z: Tensor, labels: List[str]) -> ModelOutput:
+    def forward(self, z: Tensor, instruction_labels: List[str]) -> ModelOutput:
         raise NotImplementedError

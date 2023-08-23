@@ -27,7 +27,7 @@ class PrefixGPT2Model(nn.Module):
         # Concatenate prefix and target embeddings
         input_embeddings: Tensor = torch.cat([prefix_embeddings, target_embeddings], dim=1)
         input_attention_mask: Tensor = torch.cat([
-            torch.ones(prefix_embeddings.shape[:2]),
+            torch.zeros(prefix_embeddings.shape[:2]),  # Prefix will be ignored in loss calculation
             target_tokenized.attention_mask
         ], dim=1).to(DEVICE)
 

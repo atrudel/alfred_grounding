@@ -8,6 +8,7 @@ from torch import nn
 from transformers import CLIPTextModelWithProjection, CLIPVisionModelWithProjection, CLIPTokenizerFast, \
     CLIPImageProcessor
 
+CLIP_EMBEDDING_SIZE = 512
 
 class CLIPModelFrozen(nn.Module):
     def __init__(self):

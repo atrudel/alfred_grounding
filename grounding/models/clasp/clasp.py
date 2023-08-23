@@ -9,7 +9,7 @@ from transformers.utils import ModelOutput
 
 from config import DEVICE
 from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
-from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixMappingBehaviorGenerator
+from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixTuningBehaviorGenerator
 from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
 from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
 from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
@@ -23,7 +23,7 @@ class CLASP(L.LightningModule):
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
         self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
-        self.behavior_generator: BehaviorGeneratingDecoder = PrefixMappingBehaviorGenerator(z_size)
+        self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size)
         self.cross_entropy: nn.CrossEntropyLoss = nn.CrossEntropyLoss()
         self.beta_align: float = beta_align
         self.beta_caption: float = beta_caption
@@ -33,15 +33,13 @@ class CLASP(L.LightningModule):
         self.weight_decay: float = weightdecay
 
     def training_step(self, batch, batch_idx) -> float:
-        instructions, images, actions = batch
-        loss = self._forward(actions, images, instructions)
+        loss = self._forward(batch)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        instructions, images, actions = batch
-        loss = self._forward(actions, images, instructions)
-        self.log("val_loss", loss, batch_size=len(instructions))
+        loss = self._forward(batch)
+        self.log("val_loss", loss)
 
 
     def configure_optimizers(self):
@@ -55,29 +53,43 @@ class CLASP(L.LightningModule):
     def predict_step(self, batch, batch_idx):
         pass
 
-    def _forward(self, actions: List[str], images: List[object], instructions: List[str]) -> float:
-        loss_align: float = self._forward_align(instructions, images, actions)
-        loss_caption: float = self._forward_captioning(instructions, images, actions)
-        loss_behavior_gen: float = self._forward_behavior_generation(instructions, images, actions)
+    def _forward(self, batch: dict) -> float:
+        loss_align: float = self._forward_alignment(batch)
+        loss_caption: float = self._forward_captioning(batch)
+        loss_behavior_gen: float = self._forward_behavior_generation(batch)
         loss_global: float = self.beta_align * loss_align + \
                              self.beta_caption * loss_caption + \
                              self.beta_behavior_gen * loss_behavior_gen
         return loss_global
 
-    def _forward_align(self, instructions: Tensor, images: Tensor, actions: Tensor) -> float:
-        z_instruction = self.reparametrization_trick(*self.instruction_encoder(instructions))
-        z_behavior = self.reparametrization_trick(*self.behavior_encoder(images, actions))
+    def _forward_alignment(self, batch) -> float:
+        z_instruction = self.reparametrization_trick(*self.instruction_encoder(
+            batch["instruction_clip_feats"]
+        ))
+        z_behavior = self.reparametrization_trick(*self.behavior_encoder(
+            batch["image_clip_feats"], batch["command_clip_feats"]
+        ))
         loss_align = self.contrastive_loss(z_instruction, z_behavior)
         return loss_align
 
-    def _forward_captioning(self, instructions, images, actions) -> float:
-        z_behavior = self.reparametrization_trick(*self.behavior_encoder(images, actions))
-        output: CausalLMOutputWithCrossAttentions = self.captioner(z_behavior, instructions)
+    def _forward_captioning(self, batch) -> float:
+        z_behavior = self.reparametrization_trick(*self.behavior_encoder(
+            batch["image_clip_feats"], batch["command_clip_feats"]
+        ))
+        output: CausalLMOutputWithCrossAttentions = self.captioner(
+            z_behavior, batch["instruction"]
+        )
         return output.loss.mean()
 
-    def _forward_behavior_generation(self, instructions, images, actions) -> float:
-        z_instruction = self.reparametrization_trick(*self.instruction_encoder(instructions))
-        output: ModelOutput = self.behavior_generator(z_instruction, images, actions)
+    def _forward_behavior_generation(self, batch) -> float:
+        z_instruction = self.reparametrization_trick(*self.instruction_encoder(
+            batch["instruction_clip_feats"]
+        ))
+        output: ModelOutput = self.behavior_generator(
+            z_instruction,
+            batch["image_clip_feats"],
+            batch["command"]
+        )
         return output.loss.mean()
 
     def contrastive_loss(self, z_text, z_behavior):

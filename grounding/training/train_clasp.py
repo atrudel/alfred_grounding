@@ -2,7 +2,7 @@ import argparse
 from argparse import Namespace
 
 from lightning import Trainer
-from mpmath import mp
+import torch.multiprocessing as mp
 
 from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders

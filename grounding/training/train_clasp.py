@@ -30,7 +30,7 @@ parser.add_argument('--temperature', type=float, default=0.07, help='Temperature
 
 def launch_training(args: Namespace):
     if DEVICE == "cuda":
-        mp.start_method("spawn")
+        mp.set_start_method("spawn")
 
     clasp_model = CLASP(
         z_size=args.z_size,

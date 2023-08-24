@@ -2,7 +2,9 @@ import argparse
 from argparse import Namespace
 
 from lightning import Trainer
+from mpmath import mp
 
+from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.clasp.clasp import CLASP
 
@@ -27,6 +29,9 @@ parser.add_argument('--temperature', type=float, default=0.07, help='Temperature
 
 
 def launch_training(args: Namespace):
+    if DEVICE == "cuda":
+        mp.start_method("spawn")
+
     clasp_model = CLASP(
         z_size=args.z_size,
         beta_align=1,

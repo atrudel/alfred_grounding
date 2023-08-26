@@ -18,7 +18,7 @@ parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to
 parser.add_argument('--eval_every', type=int, default=500, help='Nb of update steps between evaluations')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')
 parser.add_argument('--num_workers', type=int, default=1, help='Number of workers used in the data loaders.')
-parser.add_argument('--gradient_clipping', type=float, default=None, help='Value of the gradient clipping')
+parser.add_argument('--gradient_clipping', type=float, default=1, help='Value of the gradient clipping')
 
 parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
 parser.add_argument('--profiler', action='store_true', help='Use a profiler to find bottlenecks in the code.')

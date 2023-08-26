@@ -7,8 +7,7 @@ from lightning import Trainer
 
 from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
-from grounding.models.clasp.clasp import CLASP
-from models.standalone_prefix_gpt2 import StandalonePrefixTuningGPT2
+from grounding.models.standalone_prefix_gpt2 import StandalonePrefixTuningGPT2
 
 parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')
 

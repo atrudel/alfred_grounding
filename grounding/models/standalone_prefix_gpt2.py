@@ -7,9 +7,9 @@ from transformers import BatchEncoding, GPT2LMHeadModel, GPT2TokenizerFast
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
-from data_processing.datasets_train import get_train_and_val_dataloaders
-from models.base_models.prefix_mapper import PrefixMapper
-from training.utils import get_grad_norm
+from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
+from grounding.models.base_models.prefix_mapper import PrefixMapper
+from grounding.training.utils import get_grad_norm
 
 
 class StandalonePrefixTuningGPT2(L.LightningModule):
@@ -91,9 +91,9 @@ class StandalonePrefixTuningGPT2(L.LightningModule):
             commands_tokenized.input_ids
         ], dim=1)
         output: CausalLMOutputWithCrossAttentions = self.gpt(
-            inputs_embeds=prompt_embeds,
-            attention_mask=attention_mask,
-            labels=labels,
+            inputs_embeds=prompt_embeds.to(DEVICE),
+            attention_mask=attention_mask.to(DEVICE),
+            labels=labels.to(DEVICE),
             return_dict=True
         )
         loss = output.loss
@@ -110,7 +110,7 @@ class StandalonePrefixTuningGPT2(L.LightningModule):
 
     def embed_tokens(self, tokens: Tensor) -> Tensor:
         embeddings: nn.Module = self.gpt.get_input_embeddings()
-        return embeddings(tokens).to(DEVICE)
+        return embeddings(tokens.to(DEVICE))
 
 
 

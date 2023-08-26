@@ -16,6 +16,7 @@ from transformers.modeling_outputs import Seq2SeqLMOutput
 
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
+from training.utils import get_grad_norm
 
 MODEL_SAVE_FILENAME = 'checkpoint.pth.tar'
 
@@ -101,16 +102,6 @@ def validate_model(dataloader: DataLoader,
     writer.add_scalar(f"Loss/{split}", avg_loss, global_idx)
     writer.add_scalar(f"Perplexity/{split}", avg_perplexity, global_idx)
     return avg_loss, avg_perplexity
-
-
-def get_grad_norm(model):
-    total_norm = 0.0
-    for p in model.parameters():
-        if p.grad is not None:
-            param_norm = p.grad.data.norm(2)
-            total_norm += param_norm.item() ** 2
-    total_norm = total_norm ** (1. / 2)
-    return total_norm
 
 
 def launch_training(args: Namespace):

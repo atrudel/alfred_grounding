@@ -2,7 +2,7 @@ import torch
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
-from grounding.models.base_models.gpt2 import PrefixGPT2Model
+from grounding.models.base_models.gpt2 import GPT2Model
 from grounding.models.base_models.prefix_mapper import PrefixMapper
 from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder
 from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
@@ -11,7 +11,7 @@ from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
 class PrefixTuningBehaviorGenerator(BehaviorGeneratingDecoder):
     def __init__(self, z_dim, k_prefix=10):
         super().__init__()
-        self.gpt = PrefixGPT2Model()
+        self.gpt = GPT2Model()
         self.prefix_mapper: PrefixMapper = PrefixMapper(
             input_size=z_dim + CLIP_EMBEDDING_SIZE,
             gpt_embed_size=self.gpt.embedding_size,

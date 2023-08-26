@@ -4,7 +4,7 @@ from torch import Tensor
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
-from grounding.models.base_models.gpt2 import PrefixGPT2Model
+from grounding.models.base_models.gpt2 import GPT2Model
 from grounding.models.base_models.prefix_mapper import PrefixMapper
 from grounding.models.clasp.decoders.base_classes import CaptioningDecoder
 
@@ -12,7 +12,7 @@ from grounding.models.clasp.decoders.base_classes import CaptioningDecoder
 class PrefixTuningCaptioner(CaptioningDecoder):
     def __init__(self, z_size, k_prefix=10):
         super().__init__()
-        self.gpt: PrefixGPT2Model = PrefixGPT2Model().to(DEVICE)
+        self.gpt: GPT2Model = GPT2Model().to(DEVICE)
         self.prefix_mapper = PrefixMapper(
             input_size=z_size,
             gpt_embed_size=self.gpt.embedding_size,

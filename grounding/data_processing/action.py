@@ -12,7 +12,7 @@ from transformers import BatchEncoding
 
 from grounding.data_processing.object import Object, bind_object, object_names
 from grounding.models.base_models.clip import CLIPModelFrozen
-from grounding.models.base_models.gpt2 import PrefixGPT2Model
+from grounding.models.base_models.gpt2 import GPT2Model
 
 
 class Action:
@@ -52,7 +52,7 @@ class Action:
         return clip_model.encode_texts(text)
 
     @staticmethod
-    def _encode_text_for_gpt(text: str, gpt_model: PrefixGPT2Model) -> BatchEncoding:
+    def _encode_text_for_gpt(text: str, gpt_model: GPT2Model) -> BatchEncoding:
         return gpt_model.tokenizer(text, return_tensors='pt')
 
     @staticmethod

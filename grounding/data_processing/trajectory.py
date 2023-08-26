@@ -8,7 +8,7 @@ from torch import Tensor
 from grounding.data_processing.action import Action
 from grounding.data_processing.object import Object, bind_object, UnmatchedObjectException
 from grounding.models.base_models.clip import CLIPModelFrozen
-from grounding.models.base_models.gpt2 import PrefixGPT2Model
+from grounding.models.base_models.gpt2 import GPT2Model
 
 
 class Trajectory:
@@ -102,7 +102,7 @@ class Trajectory:
                 curr_high_lvl_idx: int = image_info['high_idx']
         return image_paths
 
-    def split_actions(self, clip_model: CLIPModelFrozen, gpt_model: PrefixGPT2Model) -> List[Action]:
+    def split_actions(self, clip_model: CLIPModelFrozen, gpt_model: GPT2Model) -> List[Action]:
         """
         Splits a trajectory into actions. Gets rid of the Stop action.
         Perform the pre-processing relative to the various models used in the project.

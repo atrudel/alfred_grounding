@@ -8,6 +8,7 @@ from lightning import Trainer
 from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.clasp.clasp import CLASP
+from models.standalone_prefix_gpt2 import StandalonePrefixTuningGPT2
 
 parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')
 
@@ -23,28 +24,21 @@ parser.add_argument('--gradient_clipping', type=float, default=None, help='Value
 parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
 parser.add_argument('--profiler', action='store_true', help='Use a profiler to find bottlenecks in the code.')
 
-parser.add_argument('--z_size', type=int, default=512, help='Size of the z embedding.')
-parser.add_argument('--beta_caption', type=float, default=1., help='Coefficient for the captioning loss component.')
-parser.add_argument('--beta_behav_gen', type=float, default=1., help='Coefficient for the behavior generation loss component.')
-parser.add_argument('--temperature', type=float, default=0.07, help='Temperature use in the contrastive loss.')
+parser.add_argument('--prefix_length', type=int, default=10, help='Number of tokens of the prefix that is tuned.')
+
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 
 def launch_training(args: Namespace):
     if DEVICE == "cuda":
         mp.set_start_method("spawn")
 
-    clasp_model = CLASP(
-        z_size=args.z_size,
-        beta_align=1,
-        beta_caption=args.beta_caption,
-        beta_behavior_gen=args.beta_behav_gen,
-        temperature=args.temperature,
-        learning_rate=args.lr,
-        weightdecay=args.weightdecay
-    )
+    model = StandalonePrefixTuningGPT2(args.prefix_length, args.lr, args.weightdecay)
+
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=args.batch_size,
-        clasp_mode=True,
+        clasp_mode=False,
         num_workers=args.num_workers,
         train_fraction=0.01 if args.debug else 1.
     )
@@ -58,7 +52,7 @@ def launch_training(args: Namespace):
         profiler="simple" if args.profiler else None
     )
     trainer.fit(
-        model=clasp_model,
+        model=model,
         train_dataloaders=train_dataloader,
         val_dataloaders=val_dataloader
     )

@@ -14,3 +14,11 @@ def load_preprocessed_action(split: str, id: int) -> Optional[Action]:
     with open(actions_directory / filename, 'rb') as f:
         action: Action = pickle.load(f)
     return action
+
+
+
+
+if __name__ == '__main__':
+
+    action = load_preprocessed_action('train', 140943)
+    a = 1

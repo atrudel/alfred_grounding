@@ -8,7 +8,7 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from config import DEVICE
 
 
-class PrefixGPT2Model(nn.Module):
+class GPT2Model(nn.Module):
     def __init__(self):
         super().__init__()
         self.tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
@@ -22,7 +22,7 @@ class PrefixGPT2Model(nn.Module):
 
         # Get embeddings associated with target text
         target_tokenized: BatchEncoding = self.tokenizer(target_texts, return_tensors='pt', padding=True)
-        target_embeddings: Tensor = self.model.get_input_embeddings()(target_tokenized.input_ids.to(DEVICE))
+        target_embeddings: Tensor = self.embed_tokens(target_tokenized.input_ids)
 
         # Concatenate prefix and target embeddings
         input_embeddings: Tensor = torch.cat([prefix_embeddings, target_embeddings], dim=1)
@@ -65,4 +65,8 @@ class PrefixGPT2Model(nn.Module):
     @property
     def embedding_size(self):
         return self.model.config.n_embd
+
+    def embed_tokens(self, tokens: Tensor) -> Tensor:
+        embeddings: nn.Module = self.model.get_input_embeddings()
+        return embeddings(tokens.to(DEVICE))
 

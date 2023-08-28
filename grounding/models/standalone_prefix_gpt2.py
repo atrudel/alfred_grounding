@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 
 import lightning as L
 import torch
@@ -7,6 +7,7 @@ from transformers import BatchEncoding, GPT2LMHeadModel, GPT2TokenizerFast
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
+from data_processing.action import Action
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.base_models.prefix_mapper import PrefixMapper
 from grounding.training.utils import get_grad_norm
@@ -112,8 +113,65 @@ class StandalonePrefixTuningGPT2(L.LightningModule):
         embeddings: nn.Module = self.gpt.get_input_embeddings()
         return embeddings(tokens.to(DEVICE))
 
+    def evaluate_command_generation_on_all_object_options(self,
+                                                          action: Action,
+                                                          candidate_output_texts: List[str]
+                                                          ) -> Tuple[Tensor, Tensor]:
+        """
+        The model scores all candidate commands in order to figure out which one is preferred.
+        :param action: Action object associated with the action being tested
+        :param candidate_output_texts: Command options will all permutations of the objec of interaction
+        :return: logits Tensor
+        """
+        n_candidates: int = len(candidate_output_texts)
+        instruction_tokenized: BatchEncoding = action.instruction_gpt_encoded  # [1, 768]
+        image_features: Tensor = action.image_resnet_features  # [1, 512]
+        candidate_commands_tokenized: BatchEncoding = self.tokenizer(
+            candidate_output_texts, return_tensors='pt', padding=True
+        )
 
+        # Instruction
+        instruction_tokens: Tensor = instruction_tokenized['input_ids'].repeat(n_candidates, 1)  # [80, instr_len]
+        instruction_embeds: Tensor = self.embed_tokens(instruction_tokens)  # [80, instr_len, 768]
+        instruction_att_mask: Tensor = instruction_tokenized['attention_mask'].repeat(n_candidates, 1) # [80, instr_len]
 
+        # Prefix
+        prefix: Tensor = self.prefix_mapper(image_features).repeat(n_candidates, 1, 1)  # [80, pfx_len, 768]
+
+        # Teacher-forcing input
+        teacher_forcing_embeddings: Tensor = self.embed_tokens(candidate_commands_tokenized['input_ids'])  # [80, label_len, 768]
+
+        # Full prompt
+        prompt_embeds: Tensor = torch.cat([
+            instruction_embeds,         # [80, instr_len, 768]
+            prefix,                     # [80, pfx_len, 768]
+            teacher_forcing_embeddings  # [80, label_len, 768]
+        ], dim=1)
+
+        # Attention Mask
+        attention_mask: Tensor = torch.cat([
+            instruction_att_mask,                       # [80, instr_len]
+            torch.ones(prefix.shape[:2]),               # [80, pfx_len]
+            torch.ones(teacher_forcing_embeddings.shape[:2])  # [80, label_len]
+        ], dim=1)
+
+        # Labels
+        labels = torch.cat([
+            torch.full(size=instruction_embeds.shape[:2], fill_value=-100),     # [80, instr_len]
+            torch.full(size=prefix.shape[:2], fill_value=-100),                 # [80, pfx_len]
+            candidate_commands_tokenized['input_ids']                           # [80, label_len]
+        ], dim=1)
+
+        with torch.no_grad():
+            output: CausalLMOutputWithCrossAttentions = self.gpt(
+                inputs_embeds=prompt_embeds,
+                attention_mask=attention_mask,
+                labels=labels,
+                return_dict=True
+            )
+        target_tokens = candidate_commands_tokenized["input_ids"]
+        relevant_logits: Tensor = output.logits[:, -target_tokens.shape[1]:, :] # Keep logits that correspond to candidate completion
+        return relevant_logits, target_tokens
 
 
 if __name__ == '__main__':

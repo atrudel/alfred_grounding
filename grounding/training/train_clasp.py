@@ -14,11 +14,11 @@ parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model
 parser.add_argument('--name', type=str, help='Name of experiment')
 parser.add_argument('--lr', type=float, default=0.0003, help='Learning rate')
 parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
-parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to run')
+parser.add_argument('--epochs', type=int, default=50, help='Number of epochs to run')
 parser.add_argument('--eval_every', type=int, default=500, help='Nb of update steps between evaluations')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')
 parser.add_argument('--num_workers', type=int, default=1, help='Number of workers used in the data loaders.')
-parser.add_argument('--gradient_clipping', type=float, default=None, help='Value of the gradient clipping')
+parser.add_argument('--gradient_clipping', type=float, default=1., help='Value of the gradient clipping')
 
 parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
 parser.add_argument('--overfit', action='store_true', help='Overfit a small portion of the training data to debug.')
@@ -51,12 +51,12 @@ def launch_training(args: Namespace):
     )
     trainer: Trainer = Trainer(
         limit_train_batches=3 if args.debug else None,
-        val_check_interval=args.eval_every,
+        val_check_interval=50 if args.overfit else args.eval_every,
         fast_dev_run=True if args.debug else False,
         max_epochs=args.epochs,
         gradient_clip_val=args.gradient_clipping,     # Todo: Gradient clipping?
         detect_anomaly=True,
-        profiler="simple" if args.profiler else None,
+        profiler="advanced" if args.profiler else None,
         overfit_batches=0.01 if args.overfit else 0.
     )
     trainer.fit(

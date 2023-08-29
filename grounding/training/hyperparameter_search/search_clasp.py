@@ -1,15 +1,19 @@
 from datetime import datetime
 
 import optuna
+import torch.multiprocessing as mp
 from lightning import Trainer
 from optuna import Trial
-from optuna.integration import PyTorchLightningPruningCallback
 
+from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.clasp import CLASP
 
 
 def objective(trial: Trial):
+    if DEVICE == "cuda":
+        mp.set_start_method("spawn")
+
     z_size = trial.suggest_int("z_size", 20, 512)
     temperature = trial.suggest_float("temperature", 0.01, 5)
     learning_rate = trial.suggest_float("learning_rate", 0.0001, 0.1, log=True)

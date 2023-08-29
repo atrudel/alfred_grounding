@@ -16,7 +16,7 @@ from transformers.modeling_outputs import Seq2SeqLMOutput
 
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
-from training.utils import get_grad_norm
+from grounding.training.utils import get_grad_norm
 
 MODEL_SAVE_FILENAME = 'checkpoint.pth.tar'
 

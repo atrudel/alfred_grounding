@@ -7,7 +7,7 @@ from transformers import BatchEncoding, GPT2LMHeadModel, GPT2TokenizerFast
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
-from data_processing.action import Action
+from grounding.data_processing.action import Action
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.base_models.prefix_mapper import PrefixMapper
 from grounding.training.utils import get_grad_norm

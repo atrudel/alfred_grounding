@@ -9,7 +9,7 @@ import torch
 from tqdm import tqdm
 
 from grounding.data_processing.action import Action
-from data_processing.datasets_eval import EvalAlfredHLActionDataset
+from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
 from grounding.evaluation.scoring_methods.mode_selection import get_mode_metrics, get_mode_scorer
 from grounding.evaluation.utils import parse_eval_args, announce_start_evaluation
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder

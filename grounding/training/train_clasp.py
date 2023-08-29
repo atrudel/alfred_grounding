@@ -6,7 +6,7 @@ from lightning import Trainer
 
 from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
-from models.clasp_modules import CLASP
+from grounding.models.clasp import CLASP
 
 parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')
 

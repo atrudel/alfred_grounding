@@ -50,7 +50,7 @@ def launch_training(args: Namespace):
     )
     trainer: Trainer = Trainer(
         limit_train_batches=3 if args.debug else None,
-        val_check_interval=50 if args.overfit else args.eval_every,
+        val_check_interval=12 if args.overfit else args.eval_every,
         fast_dev_run=True if args.debug else False,
         max_epochs=args.epochs,
         gradient_clip_val=args.gradient_clipping,

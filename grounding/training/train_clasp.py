@@ -1,5 +1,4 @@
 import argparse
-import os
 from argparse import Namespace
 
 import torch.multiprocessing as mp
@@ -7,7 +6,7 @@ from lightning import Trainer
 
 from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
-from grounding.models.clasp.clasp import CLASP
+from models.clasp_modules import CLASP
 
 parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')
 
@@ -54,7 +53,7 @@ def launch_training(args: Namespace):
         val_check_interval=50 if args.overfit else args.eval_every,
         fast_dev_run=True if args.debug else False,
         max_epochs=args.epochs,
-        gradient_clip_val=args.gradient_clipping,     # Todo: Gradient clipping?
+        gradient_clip_val=args.gradient_clipping,
         detect_anomaly=True,
         profiler="advanced" if args.profiler else None,
         overfit_batches=0.01 if args.overfit else 0.

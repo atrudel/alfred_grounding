@@ -4,7 +4,7 @@ import torch
 from torch import nn, Tensor
 
 from config import DEVICE
-from grounding.models.clasp.encoders.variational_encoder import VariationalEncoder
+from grounding.models.clasp_modules.encoders.variational_encoder import VariationalEncoder
 from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
 
 

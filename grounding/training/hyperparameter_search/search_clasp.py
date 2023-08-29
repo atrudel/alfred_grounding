@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import optuna
 from lightning import Trainer
 from optuna import Trial
@@ -31,9 +33,21 @@ def objective(trial: Trial):
     )
 
     trainer = Trainer(
-        max_epochs=50,
-        gradient_clip_val=gradient_clipping,
+        logger=True,
+        enable_checkpointing=False,
+        max_epochs=20,
+        accelerator="auto",
+        devices=1,
+        gradient_clip_val=gradient_clipping
     )
+    hyperparameters = dict(
+        z_size=z_size,
+        temperature=temperature,
+        learning_rate=learning_rate,
+        weightdecay=weightdecay,
+        gradient_clipping=gradient_clipping
+    )
+    trainer.logger.log_hyperparams(hyperparameters)
     trainer.fit(
         model=clasp_model,
         train_dataloaders=train_dataloader,
@@ -45,5 +59,12 @@ def objective(trial: Trial):
 
 
 if __name__ == '__main__':
-    study = optuna.create_study()
-    study.optimize(objective, n_trials=100)
+    pruner = optuna.pruners.MedianPruner()
+    study = optuna.create_study(
+        direction="minimize",
+        pruner=pruner,
+        storage="sqlite:///db.sqlite3",
+        study_name=f"hparam_search_{datetime.now()}"
+    )
+    study.optimize(objective, n_trials=50)
+    print(f"Best value: {study.best_value} (params: {study.best_params})")

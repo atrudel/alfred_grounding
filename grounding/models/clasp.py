@@ -10,11 +10,11 @@ from transformers.utils import ModelOutput
 
 from config import DEVICE
 from grounding.data_processing.action import Action
-from grounding.models.clasp.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
-from grounding.models.clasp.decoders.prefix_tuning.prefix_behavior_generator import PrefixTuningBehaviorGenerator
-from grounding.models.clasp.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
-from grounding.models.clasp.encoders.behavior_encoders import BehaviorEncoder
-from grounding.models.clasp.encoders.instruction_encoders import TextEncoder
+from grounding.models.clasp_modules.decoders.base_classes import BehaviorGeneratingDecoder, CaptioningDecoder
+from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_behavior_generator import PrefixTuningBehaviorGenerator
+from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
+from grounding.models.clasp_modules.encoders.behavior_encoders import BehaviorEncoder
+from grounding.models.clasp_modules.encoders.instruction_encoders import TextEncoder
 
 
 class CLASP(L.LightningModule):
@@ -26,11 +26,11 @@ class CLASP(L.LightningModule):
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
         self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
         self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size)
-        self.cross_entropy: nn.CrossEntropyLoss = nn.CrossEntropyLoss()
         self.beta_align: float = beta_align
         self.beta_caption: float = beta_caption
         self.beta_behavior_gen: float = beta_behavior_gen
         self.temperature: float = temperature
+        self.cross_entropy = nn.CrossEntropyLoss()
         self.learning_rate: float = learning_rate
         self.weight_decay: float = weightdecay
 
@@ -98,19 +98,20 @@ class CLASP(L.LightningModule):
 
     def contrastive_loss(self, z_text, z_behavior):
         batch_size: int = z_text.shape[0]
-        z_text = F.normalize(z_text, dim=1)
-        z_behavior = F.normalize(z_behavior, dim=1)
+        z_text = F.normalize(z_text, dim=1, p=2)
+        z_behavior = F.normalize(z_behavior, dim=1, p=2)
 
-        similarity_logits = torch.matmul(z_text, z_behavior.T)
+        similarity_matrix = torch.matmul(z_text, z_behavior.T)
+        logits = similarity_matrix / self.hparams.temperature
 
         labels = torch.arange(batch_size).to(DEVICE)
-        loss_text = self.cross_entropy(similarity_logits, labels)
-        loss_behav = self.cross_entropy(similarity_logits.T, labels)
+
+        loss_text = self.cross_entropy(logits, labels)
+        loss_behav = self.cross_entropy(logits.T, labels)
         loss = (loss_text + loss_behav) / 2
         return loss
 
     def reparametrization_trick(self, means, log_vars):
-        # Todo: log_vars or vars
         stds = torch.exp(0.5 * log_vars)
         eps = torch.randn_like(stds)
         z = eps * stds + means

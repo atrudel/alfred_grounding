@@ -6,7 +6,7 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from config import DEVICE
 from grounding.models.base_models.gpt2 import GPT2Model
 from grounding.models.base_models.prefix_mapper import PrefixMapper
-from grounding.models.clasp.decoders.base_classes import CaptioningDecoder
+from grounding.models.clasp_modules.decoders.base_classes import CaptioningDecoder
 
 
 class PrefixTuningCaptioner(CaptioningDecoder):

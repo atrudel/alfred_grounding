@@ -18,3 +18,4 @@ matplotlib
 datatest
 lightning
 pytest
+optuna

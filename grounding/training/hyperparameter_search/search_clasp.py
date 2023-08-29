@@ -3,8 +3,8 @@ from lightning import Trainer
 from optuna import Trial
 from optuna.integration import PyTorchLightningPruningCallback
 
-from data_processing.datasets_train import get_train_and_val_dataloaders
-from models.clasp import CLASP
+from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
+from grounding.models.clasp import CLASP
 
 
 def objective(trial: Trial):

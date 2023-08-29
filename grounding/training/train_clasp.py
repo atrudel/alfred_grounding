@@ -21,6 +21,7 @@ parser.add_argument('--num_workers', type=int, default=1, help='Number of worker
 parser.add_argument('--gradient_clipping', type=float, default=None, help='Value of the gradient clipping')
 
 parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
+parser.add_argument('--overfit', action='store_true', help='Overfit a small portion of the training data to debug.')
 parser.add_argument('--profiler', action='store_true', help='Use a profiler to find bottlenecks in the code.')
 
 parser.add_argument('--z_size', type=int, default=512, help='Size of the z embedding.')
@@ -56,7 +57,7 @@ def launch_training(args: Namespace):
         gradient_clip_val=args.gradient_clipping,     # Todo: Gradient clipping?
         detect_anomaly=True,
         profiler="simple" if args.profiler else None,
-        overfit_batches=0.01 if args.debug else 0.
+        overfit_batches=0.01 if args.overfit else 0.
     )
     trainer.fit(
         model=clasp_model,

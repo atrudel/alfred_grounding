@@ -46,7 +46,7 @@ def launch_training(args: Namespace):
         batch_size=args.batch_size,
         clasp_mode=True,
         num_workers=args.num_workers,
-        train_fraction=0.01 if args.debug else 1.
+        train_fraction=1
     )
     trainer: Trainer = Trainer(
         limit_train_batches=3 if args.debug else None,
@@ -55,12 +55,13 @@ def launch_training(args: Namespace):
         max_epochs=args.epochs,
         gradient_clip_val=args.gradient_clipping,     # Todo: Gradient clipping?
         detect_anomaly=True,
-        profiler="simple" if args.profiler else None
+        profiler="simple" if args.profiler else None,
+        overfit_batches=0.01 if args.debug else 0.
     )
     trainer.fit(
         model=clasp_model,
         train_dataloaders=train_dataloader,
-        val_dataloaders=val_dataloader
+        val_dataloaders=val_dataloader,
     )
 
 

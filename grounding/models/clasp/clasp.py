@@ -42,6 +42,8 @@ class CLASP(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss = self._forward(batch)
         self.log("val_loss", loss)
+        # alignment_accuarcy = self._alignment_accuracy(batch)
+        # self.log("val_acc_alignment", alignment_accuarcy)
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(),
@@ -56,11 +58,12 @@ class CLASP(L.LightningModule):
 
     def _forward(self, batch: dict) -> float:
         loss_align: float = self._forward_alignment(batch)
-        loss_caption: float = self._forward_captioning(batch)
-        loss_behavior_gen: float = self._forward_behavior_generation(batch)
-        loss_global: float = self.beta_align * loss_align + \
-                             self.beta_caption * loss_caption + \
-                             self.beta_behavior_gen * loss_behavior_gen
+        loss_global: float = loss_align
+        # loss_caption: float = self._forward_captioning(batch)
+        # loss_behavior_gen: float = self._forward_behavior_generation(batch)
+        # loss_global: float = self.beta_align * loss_align + \
+        #                      self.beta_caption * loss_caption + \
+        #                      self.beta_behavior_gen * loss_behavior_gen
         return loss_global
 
     def _forward_alignment(self, batch) -> float:
@@ -144,6 +147,8 @@ class CLASP(L.LightningModule):
         output_toks: Tensor = ouput_tokenized["input_ids"]
         return logits, output_toks
 
+    def _alignment_accuracy(self, batch) -> float:
+        pass
 
 
 

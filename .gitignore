@@ -16,3 +16,4 @@ results
 build
 venv
 .env
+db.sqlite3

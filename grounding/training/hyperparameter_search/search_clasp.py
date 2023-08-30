@@ -1,19 +1,23 @@
+import argparse
+from argparse import Namespace
 from datetime import datetime
 
+from config import REPO_ROOT
 import optuna
 import torch.multiprocessing as mp
 from lightning import Trainer
+from lightning.pytorch.callbacks import ModelSummary
 from optuna import Trial
 
 from config import DEVICE
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.clasp import CLASP
 
+parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model.')
+parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
+
 
 def objective(trial: Trial):
-    if DEVICE == "cuda":
-        mp.set_start_method("spawn")
-
     z_size = trial.suggest_int("z_size", 20, 512)
     temperature = trial.suggest_float("temperature", 0.01, 5)
     learning_rate = trial.suggest_float("learning_rate", 0.0001, 0.1, log=True)
@@ -27,22 +31,25 @@ def objective(trial: Trial):
         beta_behavior_gen=1,
         temperature=temperature,
         learning_rate=learning_rate,
-        weightdecay=weightdecay
+        weightdecay=weightdecay,
     )
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=12,
         clasp_mode=True,
-        num_workers=1,
+        num_workers=4,
         train_fraction=1
     )
 
-    trainer = Trainer(
-        logger=True,
+    trainer: Trainer = Trainer(
         enable_checkpointing=False,
-        max_epochs=20,
+        enable_model_summary=False,
+        max_epochs=1 if args.debug else 20,
         accelerator="auto",
         devices=1,
-        gradient_clip_val=gradient_clipping
+        gradient_clip_val=gradient_clipping,
+        limit_train_batches=0.01 if args.debug else 1.0,
+        limit_val_batches=0.5 if args.debug else 1.0,
+        default_root_dir=REPO_ROOT / 'hparam_search'
     )
     hyperparameters = dict(
         z_size=z_size,
@@ -63,6 +70,10 @@ def objective(trial: Trial):
 
 
 if __name__ == '__main__':
+    args: Namespace = parser.parse_args()
+
+    if DEVICE == "cuda":
+        mp.set_start_method("spawn")
     pruner = optuna.pruners.MedianPruner()
     study = optuna.create_study(
         direction="minimize",

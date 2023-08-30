@@ -36,12 +36,14 @@ class CLASP(L.LightningModule):
 
     def training_step(self, batch, batch_idx) -> float:
         loss = self._forward(batch)
-        self.log("train_loss", loss)
+        self.log("train_loss", loss.item())
+        torch.cuda.empty_cache()
         return loss
 
     def validation_step(self, batch, batch_idx):
         loss = self._forward(batch)
         self.log("val_loss", loss)
+        torch.cuda.empty_cache()
         # alignment_accuarcy = self._alignment_accuracy(batch)
         # self.log("val_acc_alignment", alignment_accuarcy)
 

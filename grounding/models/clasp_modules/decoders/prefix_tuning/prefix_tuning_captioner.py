@@ -19,7 +19,7 @@ class PrefixTuningCaptioner(CaptioningDecoder):
             k_prefix=k_prefix
         ).to(DEVICE)
 
-    def forward(self, z: Tensor, instruction_labels: List[str]) -> CausalLMOutputWithCrossAttentions:
-        prefix = self.prefix_mapper(z)
+    def forward(self, z_behavior: Tensor, instruction_labels: List[str]) -> CausalLMOutputWithCrossAttentions:
+        prefix = self.prefix_mapper(z_behavior)
         output = self.gpt.forward(prefix, instruction_labels)
         return output

@@ -26,21 +26,17 @@ class CLASP(L.LightningModule):
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
         self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
         self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size)
-        self.beta_align: float = beta_align
-        self.beta_caption: float = beta_caption
-        self.beta_behavior_gen: float = beta_behavior_gen
-        self.temperature: float = temperature
         self.cross_entropy = nn.CrossEntropyLoss()
         self.learning_rate: float = learning_rate
         self.weight_decay: float = weightdecay
 
-    def training_step(self, batch, batch_idx) -> float:
-        loss = self._forward(batch)
+    def training_step(self, batch, batch_idx) -> Tensor:
+        loss: Tensor = self._forward(batch)
         self.log("train_loss", loss.item())
         return loss
 
-    def validation_step(self, batch, batch_idx):
-        loss = self._forward(batch)
+    def validation_step(self, batch, batch_idx) -> None:
+        loss: Tensor = self._forward(batch)
         self.log("val_loss", loss.item())
         # alignment_accuarcy = self._alignment_accuracy(batch)
         # self.log("val_acc_alignment", alignment_accuarcy)
@@ -56,17 +52,17 @@ class CLASP(L.LightningModule):
     def predict_step(self, batch, batch_idx):
         pass
 
-    def _forward(self, batch: dict) -> float:
-        loss_align: float = self._forward_alignment(batch)
-        loss_global: float = loss_align
+    def _forward(self, batch: dict) -> Tensor:
+        loss_align: Tensor = self._forward_alignment(batch)
+        loss_global: Tensor = loss_align
         # loss_caption: float = self._forward_captioning(batch)
         # loss_behavior_gen: float = self._forward_behavior_generation(batch)
-        # loss_global: float = self.beta_align * loss_align + \
-        #                      self.beta_caption * loss_caption + \
-        #                      self.beta_behavior_gen * loss_behavior_gen
+        # loss_global: float = self.hparams.beta_align * loss_align + \
+        #                      self.hparams.beta_caption * loss_caption + \
+        #                      self.hparams.beta_behavior_gen * loss_behavior_gen
         return loss_global
 
-    def _forward_alignment(self, batch) -> float:
+    def _forward_alignment(self, batch) -> Tensor:
         z_instruction = self.reparametrization_trick(*self.instruction_encoder(
             batch["instruction_clip_feats"]
         ))
@@ -76,7 +72,7 @@ class CLASP(L.LightningModule):
         loss_align = self.contrastive_loss(z_instruction, z_behavior)
         return loss_align
 
-    def _forward_captioning(self, batch) -> float:
+    def _forward_captioning(self, batch) -> Tensor:
         z_behavior = self.reparametrization_trick(*self.behavior_encoder(
             batch["image_clip_feats"], batch["command_clip_feats"]
         ))
@@ -85,7 +81,7 @@ class CLASP(L.LightningModule):
         )
         return output.loss.mean()
 
-    def _forward_behavior_generation(self, batch) -> float:
+    def _forward_behavior_generation(self, batch) -> Tensor:
         z_instruction = self.reparametrization_trick(*self.instruction_encoder(
             batch["instruction_clip_feats"]
         ))
@@ -96,7 +92,7 @@ class CLASP(L.LightningModule):
         )
         return output.loss.mean()
 
-    def contrastive_loss(self, z_text, z_behavior):
+    def contrastive_loss(self, z_text, z_behavior) -> Tensor:
         batch_size: int = z_text.shape[0]
         z_text = F.normalize(z_text, dim=1, p=2)
         z_behavior = F.normalize(z_behavior, dim=1, p=2)
@@ -111,7 +107,7 @@ class CLASP(L.LightningModule):
         loss = (loss_text + loss_behav) / 2
         return loss
 
-    def reparametrization_trick(self, means, log_vars):
+    def reparametrization_trick(self, means, log_vars) -> Tensor:
         stds = torch.exp(0.5 * log_vars)
         eps = torch.randn_like(stds)
         z = eps * stds + means

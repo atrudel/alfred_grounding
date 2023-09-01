@@ -1,4 +1,7 @@
+from typing import List
+
 import torch
+from torch import Tensor
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
@@ -18,8 +21,11 @@ class PrefixTuningBehaviorGenerator(BehaviorGeneratingDecoder):
             k_prefix=k_prefix
         ).to(DEVICE)
 
-    def forward(self, z, images_clip_encoded, command_labels) -> CausalLMOutputWithCrossAttentions:
-        joint_repr = torch.cat([z, images_clip_encoded.squeeze()], dim=1)
-        prefix = self.prefix_mapper(joint_repr)
-        output = self.gpt.forward(prefix, command_labels)
+    def forward(self,
+                z: Tensor,
+                images_clip_encoded: Tensor,
+                command_labels: List[str]) -> CausalLMOutputWithCrossAttentions:
+        joint_repr: Tensor = torch.cat([z, images_clip_encoded.squeeze()], dim=1)
+        prefix: Tensor = self.prefix_mapper(joint_repr)
+        output: CausalLMOutputWithCrossAttentions = self.gpt.forward(prefix, command_labels)
         return output

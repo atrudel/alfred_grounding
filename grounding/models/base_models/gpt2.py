@@ -2,7 +2,7 @@ from typing import List
 
 import torch
 from torch import Tensor, nn
-from transformers import GPT2TokenizerFast, BatchEncoding, GPT2LMHeadModel
+from transformers import GPT2TokenizerFast, BatchEncoding, GPT2LMHeadModel, GPT2Tokenizer
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
@@ -11,7 +11,7 @@ from config import DEVICE
 class GPT2Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.tokenizer: GPT2TokenizerFast = GPT2TokenizerFast.from_pretrained("gpt2")
+        self.tokenizer: GPT2Tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
         self.tokenizer.pad_token = self.tokenizer.eos_token
         self.model: GPT2LMHeadModel = GPT2LMHeadModel.from_pretrained("gpt2").to(DEVICE)
 

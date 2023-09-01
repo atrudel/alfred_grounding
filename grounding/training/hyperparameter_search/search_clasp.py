@@ -1,6 +1,9 @@
 import argparse
 from argparse import Namespace
 from datetime import datetime
+from typing import List, Dict
+
+from torch import Tensor
 
 from config import REPO_ROOT
 import optuna
@@ -17,7 +20,7 @@ parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model
 parser.add_argument('--debug', action='store_true', help='Use very little data to debug.')
 
 
-def objective(trial: Trial):
+def objective(trial: Trial) -> float:
     z_size = trial.suggest_int("z_size", 20, 512)
     temperature = trial.suggest_float("temperature", 0.01, 5)
     learning_rate = trial.suggest_float("learning_rate", 0.0001, 0.1, log=True)
@@ -44,12 +47,14 @@ def objective(trial: Trial):
         enable_checkpointing=False,
         enable_model_summary=False,
         max_epochs=1 if args.debug else 20,
+        val_check_interval=0.4,
         accelerator="auto",
         devices=1,
         gradient_clip_val=gradient_clipping,
         limit_train_batches=0.01 if args.debug else 1.0,
         limit_val_batches=0.5 if args.debug else 1.0,
-        default_root_dir=REPO_ROOT / 'hparam_search'
+        default_root_dir=REPO_ROOT / 'hparam_search',
+        num_sanity_val_steps=0 if args.debug else 2
     )
     hyperparameters = dict(
         z_size=z_size,
@@ -65,8 +70,8 @@ def objective(trial: Trial):
         val_dataloaders=val_dataloader
     )
 
-    val_loss = trainer.logged_metrics["val_loss"]
-    return val_loss
+    val_loss: List[Dict[str, float]] = trainer.validate(clasp_model, dataloaders=val_dataloader)
+    return val_loss[0]['val_loss']
 
 
 if __name__ == '__main__':

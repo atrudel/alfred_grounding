@@ -5,7 +5,7 @@ import torch.multiprocessing as mp
 from lightning import Trainer
 from lightning.pytorch.callbacks import ModelSummary
 
-from config import DEVICE
+from config import DEVICE, REPO_ROOT
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
 from grounding.models.clasp import CLASP
 
@@ -59,7 +59,8 @@ def launch_training(args: Namespace):
         profiler="advanced" if args.profiler else None,
         overfit_batches=0.01 if args.overfit else 0.,
         limit_val_batches=0.01 if args.overfit else 1.0,
-        callbacks=[ModelSummary(max_depth=3)]
+        callbacks=[ModelSummary(max_depth=3)],
+        default_root_dir=REPO_ROOT / 'debug' if args.debug else None
     )
     trainer.fit(
         model=clasp_model,

@@ -63,34 +63,38 @@ class CLASP(L.LightningModule):
         return loss_global
 
     def _forward_alignment(self, batch) -> Tensor:
-        z_instruction = self.reparametrization_trick(*self.instruction_encoder(
-            batch["instruction_clip_feats"]
-        ))
-        z_behavior = self.reparametrization_trick(*self.behavior_encoder(
-            batch["image_clip_feats"], batch["command_clip_feats"]
-        ))
+        z_instruction: Tensor = self._encode_instructions(batch["instruction_clip_feats"])
+        z_behavior: Tensor = self._encode_behaviors(batch["image_clip_feats"], batch["command_clip_feats"])
         loss_align = self.contrastive_loss(z_instruction, z_behavior)
         return loss_align
 
     def _forward_captioning(self, batch) -> Tensor:
-        z_behavior = self.reparametrization_trick(*self.behavior_encoder(
-            batch["image_clip_feats"], batch["command_clip_feats"]
-        ))
+        z_behavior: Tensor = self._encode_behaviors(batch["image_clip_feats"], batch["command_clip_feats"])
         output: CausalLMOutputWithCrossAttentions = self.captioner(
             z_behavior, batch["instruction"]
         )
         return output.loss.mean()
 
     def _forward_behavior_generation(self, batch) -> Tensor:
-        z_instruction = self.reparametrization_trick(*self.instruction_encoder(
-            batch["instruction_clip_feats"]
-        ))
+        z_instruction: Tensor = self._encode_instructions(batch["instruction_clip_feats"])
         output: ModelOutput = self.behavior_generator(
             z_instruction,
             batch["image_clip_feats"],
             batch["command"]
         )
         return output.loss.mean()
+
+    def _encode_instructions(self, instruction_clip_feats: Tensor) -> Tensor:
+        z_instruction: Tensor = self.reparametrization_trick(*self.instruction_encoder(
+            instruction_clip_feats
+        ))
+        return z_instruction
+
+    def _encode_behaviors(self, image_clip_feats: Tensor, command_clip_feats: Tensor) -> Tensor:
+        z_behavior: Tensor = self.reparametrization_trick(*self.behavior_encoder(
+            image_clip_feats, command_clip_feats
+        ))
+        return z_behavior
 
     def contrastive_loss(self, z_text, z_behavior) -> Tensor:
         batch_size: int = z_text.shape[0]

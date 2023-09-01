@@ -83,7 +83,7 @@ class Action:
             templated_str = "<<STOP>>"
         return templated_str
 
-    def make_command_options_for_all_objects(self):
+    def make_command_options_for_all_objects(self) -> List[str]:
         # Todo: Handle receptacle objects too
         return [self._make_templated_string(self.type, [object_name] + self.args[1:])
                 for object_name in object_names]
@@ -143,6 +143,8 @@ class Action:
     def load_image(image_path: Path) -> np.ndarray:
         return skimage.io.imread(image_path)
 
+    def get_object_index(self) -> int:
+        return self.target_object.index
 
 class UnaccomplishedSubstitutionException(Exception):
     def __init__(self, message):

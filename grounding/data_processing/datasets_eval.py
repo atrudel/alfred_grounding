@@ -4,6 +4,16 @@ from typing import Optional, List, Dict
 from grounding.data_processing.action import Action
 from grounding.data_processing.datasets_train import AlfredHLActionDataset
 
+TESTABLE_ACTION_TYPES: List[str] = [
+    'PickupObject',
+    # 'OpenObject',
+    # 'CloseObject',
+    'ToggleObject',
+    'HeatObject',
+    'CleanObject',
+    'SliceObject',
+    'CoolObject'
+]
 
 class EvalAlfredHLActionDataset(AlfredHLActionDataset):
     """Dataset of high level actions used to evaluate models in grounding."""
@@ -33,6 +43,15 @@ class EvalAlfredHLActionDataset(AlfredHLActionDataset):
                 continue
             actions_by_type[action.type].append(action)
         return actions_by_type
+
+    def get_testable_actions(self) -> List[Action]:
+        testable_actions: List[Action] = []
+        for action_idx in range(len(self)):
+            action: Action = self.get_action(action_idx)
+            if action.type in TESTABLE_ACTION_TYPES:
+                testable_actions.append(action)
+        return testable_actions
+
 
     def get_actions_by_indices(self, indices: List[int]) -> List[Action]:
         return [self.get_action(index) for index in indices]

@@ -1,16 +1,17 @@
 import argparse
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Callable, Optional, TextIO, Dict
+from typing import List, Tuple, Optional, TextIO, Dict
 
 import numpy as np
 import pandas as pd
 import torch
 from tqdm import tqdm
 
+from grounding.evaluation.utils import load_eval_data
 from grounding.data_processing.action import Action
 from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
-from grounding.evaluation.scoring_methods.mode_selection import get_mode_metrics, get_mode_scorer
+from grounding.evaluation.scoring_methods.mode_selection import get_mode_scorer
 from grounding.evaluation.utils import parse_eval_args, announce_start_evaluation
 from grounding.models.conditional_lm import ImageConditionedLLMOnDecoder
 
@@ -95,13 +96,7 @@ if __name__ == '__main__':
     announce_start_evaluation(args)
 
     print("Loading data...")
-    datasets: List[Tuple[str, EvalAlfredHLActionDataset]] = []
-    if args.train is True:
-        datasets += [('train', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/train'))]
-    datasets += [
-        ('valid_seen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen')),
-        ('valid_unseen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen'))
-    ]
+    datasets: List[Tuple[str, EvalAlfredHLActionDataset]] = load_eval_data(args)
 
     print("Loading model...")
     model = ImageConditionedLLMOnDecoder.load(args.model_path).to(device)

@@ -1,10 +1,13 @@
 import argparse
+import os
 from pathlib import Path
-from typing import List
+from typing import List, Tuple, Optional
 
 import numpy as np
 import pandas as pd
 import torch
+
+from data_processing.datasets_eval import EvalAlfredHLActionDataset
 
 
 def parse_eval_args(description: str = "Model evaluation routine") -> argparse.Namespace:
@@ -49,3 +52,26 @@ def object_counts(values: List[str]) -> str:
         output += ", "
     output = output[:-2]  # remove extra ", "
     return output
+
+
+def load_eval_data(args):
+    datasets: List[Tuple[str, EvalAlfredHLActionDataset]] = []
+    if args.train is True:
+        datasets += [('train', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/train'))]
+    datasets += [
+        ('valid_seen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_seen')),
+        ('valid_unseen', EvalAlfredHLActionDataset('alfred/data/json_feat_2.1.0/valid_unseen'))
+    ]
+    if args.debug:
+        datasets = [(split, dataset[:10]) for split, dataset in datasets]
+    return datasets
+
+
+def get_checkpoint_path(args) -> Optional[Path]:
+    checkpoint_dir: Path = Path(args.model_dir) / 'checkpoints'
+    filenames: List[str] = os.listdir(checkpoint_dir)
+    for filename in filenames:
+        if filename.endswith('.ckpt'):
+            return checkpoint_dir / filename
+    return None
+

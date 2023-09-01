@@ -27,8 +27,6 @@ class CLASP(L.LightningModule):
         self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
         self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size)
         self.cross_entropy = nn.CrossEntropyLoss()
-        self.learning_rate: float = learning_rate
-        self.weight_decay: float = weightdecay
 
     def training_step(self, batch, batch_idx) -> Tensor:
         loss: Tensor = self._forward(batch)
@@ -38,19 +36,14 @@ class CLASP(L.LightningModule):
     def validation_step(self, batch, batch_idx) -> None:
         loss: Tensor = self._forward(batch)
         self.log("val_loss", loss.item())
-        # alignment_accuarcy = self._alignment_accuracy(batch)
-        # self.log("val_acc_alignment", alignment_accuarcy)
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(),
-                                 lr=self.learning_rate,
+                                 lr=self.hparams.learning_rate,
                                  betas=(0.9, 0.999),
                                  eps=1e-08,
-                                 weight_decay=self.weight_decay,
+                                 weight_decay=self.hparams.weightdecay,
                                  amsgrad=False)
-
-    def predict_step(self, batch, batch_idx):
-        pass
 
     def _forward(self, batch: dict) -> Tensor:
         # loss_align: Tensor = self._forward_alignment(batch)
@@ -78,9 +71,9 @@ class CLASP(L.LightningModule):
     def _forward_behavior_generation(self, batch) -> Tensor:
         z_instruction: Tensor = self._encode_instructions(batch["instruction_clip_feats"])
         output: ModelOutput = self.behavior_generator(
-            z_instruction,
-            batch["image_clip_feats"],
-            batch["command"]
+            z=z_instruction,
+            images_clip_encoded=batch["image_clip_feats"],
+            command_labels=batch["command"]
         )
         return output.loss.mean()
 
@@ -147,9 +140,6 @@ class CLASP(L.LightningModule):
         )
         output_toks: Tensor = ouput_tokenized["input_ids"]
         return logits, output_toks
-
-    def _alignment_accuracy(self, batch) -> float:
-        pass
 
 
 

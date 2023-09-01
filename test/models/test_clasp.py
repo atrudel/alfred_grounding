@@ -26,7 +26,7 @@ def test_contrastive_loss_should_return_zero_with_identical_zs(clasp_model):
     assert loss.item() == pytest.approx(0, abs=1e-5)
 
 
-def test_contrastive_loss_should_be_high_with_orthogonal_z(clasp):
+def test_contrastive_loss_should_be_high_with_orthogonal_z(clasp_model):
     # Given
     z_size = 8
     z_text = torch.tensor([[1, 0, 0, 0 ],

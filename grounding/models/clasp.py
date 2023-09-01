@@ -54,12 +54,11 @@ class CLASP(L.LightningModule):
 
     def _forward(self, batch: dict) -> Tensor:
         loss_align: Tensor = self._forward_alignment(batch)
-        loss_global: Tensor = loss_align
-        # loss_caption: float = self._forward_captioning(batch)
-        # loss_behavior_gen: float = self._forward_behavior_generation(batch)
-        # loss_global: float = self.hparams.beta_align * loss_align + \
-        #                      self.hparams.beta_caption * loss_caption + \
-        #                      self.hparams.beta_behavior_gen * loss_behavior_gen
+        loss_caption: Tensor = self._forward_captioning(batch)
+        loss_behavior_gen: Tensor = self._forward_behavior_generation(batch)
+        loss_global: Tensor = self.hparams.beta_align * loss_align + \
+                             self.hparams.beta_caption * loss_caption + \
+                             self.hparams.beta_behavior_gen * loss_behavior_gen
         return loss_global
 
     def _forward_alignment(self, batch) -> Tensor:

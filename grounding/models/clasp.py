@@ -29,13 +29,16 @@ class CLASP(L.LightningModule):
         self.cross_entropy = nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx) -> Tensor:
+        self.train()
         loss: Tensor = self._forward(batch)
         self.log("train_loss", loss.item())
         return loss
 
     def validation_step(self, batch, batch_idx) -> None:
-        loss: Tensor = self._forward(batch)
-        self.log("val_loss", loss.item())
+        self.eval()
+        with torch.no_grad():
+            loss: Tensor = self._forward(batch)
+            self.log("val_loss", loss.item())
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(),

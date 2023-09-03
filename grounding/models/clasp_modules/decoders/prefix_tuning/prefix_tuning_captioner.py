@@ -14,9 +14,10 @@ class PrefixTuningCaptioner(CaptioningDecoder):
         super().__init__()
         self.gpt: GPT2Model = GPT2Model().to(DEVICE)
         self.prefix_mapper = PrefixMapper(
-            input_size=z_size,
-            gpt_embed_size=self.gpt.embedding_size,
-            k_prefix=k_prefix
+            prefix_length=k_prefix,
+            num_layers=8,
+            dim_input=z_size,
+            dim_output=self.gpt.embedding_size,
         ).to(DEVICE)
 
     def forward(self, z_behavior: Tensor, instruction_labels: List[str]) -> CausalLMOutputWithCrossAttentions:

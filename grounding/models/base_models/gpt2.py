@@ -2,10 +2,12 @@ from typing import List
 
 import torch
 from torch import Tensor, nn
-from transformers import GPT2TokenizerFast, BatchEncoding, GPT2LMHeadModel, GPT2Tokenizer
+from transformers import BatchEncoding, GPT2LMHeadModel, GPT2Tokenizer
 from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 
 from config import DEVICE
+
+GPT2_EMBEDDING_SIZE = 768
 
 
 class GPT2Model(nn.Module):
@@ -19,6 +21,7 @@ class GPT2Model(nn.Module):
             param.requires_grad = False
 
     def forward(self, prefix_embeddings: Tensor, target_texts: List[str]) -> CausalLMOutputWithCrossAttentions:
+        batch_size, prefix_length, embed_size = prefix_embeddings.shape
 
         # Get embeddings associated with target text
         target_tokenized: BatchEncoding = self.tokenizer(target_texts, return_tensors='pt', padding=True)
@@ -27,15 +30,16 @@ class GPT2Model(nn.Module):
         # Concatenate prefix and target embeddings
         input_embeddings: Tensor = torch.cat([prefix_embeddings, target_embeddings], dim=1)
         input_attention_mask: Tensor = torch.cat([
-            torch.zeros(prefix_embeddings.shape[:2]),  # Prefix will be ignored in loss calculation
+            torch.ones(size=(batch_size, prefix_length)),  # Pay attention to the prefix
             target_tokenized.attention_mask
         ], dim=1).to(DEVICE)
 
         # Prepare labels (ignoring the prefix)
-        labels = torch.cat([
-            torch.full(size=prefix_embeddings.shape[:2], fill_value=-100),
+        labels: Tensor = torch.cat([
+            torch.full(size=prefix_embeddings.shape[:2], fill_value=-100),  # Ignore the prefix to calculate the loss
             target_tokenized.input_ids
         ], dim=1).to(DEVICE)
+        labels[labels == self.tokenizer.pad_token_id] = -100  # Ignore pad tokens in loss calculation
 
         output: CausalLMOutputWithCrossAttentions = self.model(
             inputs_embeds=input_embeddings,

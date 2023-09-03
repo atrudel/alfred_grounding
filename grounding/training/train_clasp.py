@@ -57,8 +57,9 @@ def launch_training(args: Namespace):
         gradient_clip_val=args.gradient_clipping,
         detect_anomaly=True,
         profiler="advanced" if args.profiler else None,
-        overfit_batches=0.01 if args.overfit else 0.,
+        overfit_batches=0.005 if args.overfit else 0.,
         limit_val_batches=0.01 if args.overfit else 1.0,
+        num_sanity_val_steps=0 if args.debug else 2,
         callbacks=[ModelSummary(max_depth=3)],
         default_root_dir=REPO_ROOT / 'debug' if args.debug else None
     )

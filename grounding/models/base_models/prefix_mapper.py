@@ -1,8 +1,8 @@
 import torch
 from torch import nn, Tensor
 
-from models.base_models.clip import CLIP_EMBEDDING_SIZE
-from models.base_models.gpt2 import GPT2_EMBEDDING_SIZE
+from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
+from grounding.models.base_models.gpt2 import GPT2_EMBEDDING_SIZE
 
 
 class MultiheadAttention(nn.MultiheadAttention):

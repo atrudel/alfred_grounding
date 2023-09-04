@@ -31,14 +31,14 @@ class CLASP(L.LightningModule):
     def training_step(self, batch, batch_idx) -> Tensor:
         self.train()
         loss: Tensor = self._forward(batch)
-        self.log("train_loss", loss.item())
+        self.log("train_loss", loss.item(), batch_size=len(batch['instruction']))
         return loss
 
     def validation_step(self, batch, batch_idx) -> None:
         self.eval()
         with torch.no_grad():
             loss: Tensor = self._forward(batch)
-            self.log("val_loss", loss.item())
+            self.log("val_loss", loss.item(), batch_size=len(batch['instruction']))
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(),

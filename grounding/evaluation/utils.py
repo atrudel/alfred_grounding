@@ -1,7 +1,8 @@
 import argparse
 import os
+from collections import defaultdict
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Union
 
 import numpy as np
 import pandas as pd
@@ -75,3 +76,40 @@ def get_checkpoint_path(args) -> Optional[Path]:
             return checkpoint_dir / filename
     return None
 
+
+def apply_scoring_function_to_datasets(scoring_function: callable,
+                                       datasets: List[Tuple[str, EvalAlfredHLActionDataset]],
+                                       *args, **kwargs) -> pd.DataFrame:
+    """Applies the scoring function to each dataset.
+    args and kwargs must contain the relevant models and will be passed to the scoring function"""
+    all_metrics: Dict[dict] = {}
+    for split, dataset in datasets:
+        print(f"Processing dataset: {split}..\n")
+        metrics: dict = scoring_function(dataset, *args, **kwargs)
+        all_metrics[split] = metrics
+    return pd.DataFrame(all_metrics)
+
+
+class Metrics(defaultdict):
+    def __init__(self):
+        super().__init__(list)
+
+    def add(self, metric: str, value: float):
+        self[metric].append(value)
+
+    def add_many(self, metrics: Dict[str, List[float]]):
+        for metric, values in metrics.items():
+            if isinstance(values, list):
+                self[metric].extend(values)
+            elif isinstance(values, float):
+                self[metric].append(values)
+            elif isinstance(values, int):
+                self[metric].append(values)
+            else:
+                raise ValueError(f"Unrecognized data type to add to {metric} in Metrics: {values}")
+
+    def summarize(self) -> dict:
+        return {key: np.array(values).mean() for key, values in self.items()}
+
+
+        

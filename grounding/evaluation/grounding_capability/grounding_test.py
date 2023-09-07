@@ -11,6 +11,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 from torch import nn
 from tqdm import tqdm
 
+from evaluation.scoring_methods.forced_scoring import compute_alignment_metrics_for_ambiguous_situation
 from grounding.data_processing.action import Action
 from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
 from grounding.data_processing.object import Object
@@ -34,7 +35,7 @@ class GroundingTest:
         self.situations_both: List[Action] = [action.load_and_store_image() for action in actions_both]
         self.situations_unrelated: List[Action] = [action.load_and_store_image() for action in actions_unrelated]
 
-    def launch(self, model: nn.Module) -> pd.DataFrame:
+    def launch(self, model: nn.Module, through_alignment: bool = False) -> pd.DataFrame:
         output_objects: List[Object] = [self.object_1, self.object_2, self.object_unrelated]
         mrr_column_names: List[str] = [f"MRR_{object.name}" for object in output_objects]
         top_object_column_names: List[str] = ["Top_object"]
@@ -57,8 +58,12 @@ class GroundingTest:
                 top_objects = []
                 for situation in situation_set:
                     situation.instruction = instruction
-                    (rr_obj1, rr_obj2, rr_unrelated), top_object = \
-                        compute_forced_metrics_for_ambiguous_situation(situation, model, output_objects)
+                    if through_alignment:
+                        (rr_obj1, rr_obj2, rr_unrelated), top_object = \
+                            compute_alignment_metrics_for_ambiguous_situation(situation, model, output_objects)
+                    else:
+                        (rr_obj1, rr_obj2, rr_unrelated), top_object = \
+                            compute_forced_metrics_for_ambiguous_situation(situation, model, output_objects)
                     rrs_obj1.append(rr_obj1)
                     rrs_obj2.append(rr_obj2)
                     rrs_unrelated.append(rr_unrelated)

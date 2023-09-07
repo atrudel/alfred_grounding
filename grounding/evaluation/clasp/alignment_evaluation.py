@@ -6,20 +6,21 @@ from pathlib import Path
 from typing import List, Tuple, Dict
 
 import numpy as np
-import pandas as pd
 import torch
 from torch import Tensor
 from tqdm import tqdm
 
-from config import REPO_ROOT, DEVICE
+from config import DEVICE
 from data_processing.action import Action
 from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from evaluation.utils import parse_eval_args, announce_start_evaluation, get_checkpoint_path, load_eval_data
+from evaluation.utils import parse_eval_args, announce_start_evaluation, get_checkpoint_path, load_eval_data, \
+    apply_scoring_function_to_datasets
 from models.base_models.clip import CLIPModelFrozen
 from models.clasp import CLASP
 
 
-def calculate_alignment_metrics(clasp_model: CLASP, clip_model: CLIPModelFrozen, dataset: EvalAlfredHLActionDataset):
+def calculate_alignment_metrics(dataset: EvalAlfredHLActionDataset,
+                                clasp_model: CLASP, clip_model: CLIPModelFrozen) -> Dict[str, float]:
     testable_actions: List[Action] = dataset.get_testable_actions()
     accuracies = []
     mrrs = []
@@ -52,18 +53,6 @@ def _comparative_z_metrics(z_instruction: Tensor, z_behavior_versions: Tensor, g
     return accuracy, mrr
 
 
-def apply_metrics_calculation_to_datasets(metric_function: callable,
-                                          clasp_model: CLASP,
-                                          clip_model: CLIPModelFrozen,
-                                          datasets: List[Tuple[str, EvalAlfredHLActionDataset]])-> pd.DataFrame:
-    all_metrics: Dict[dict] = {}
-    for split, dataset in datasets:
-        print(f"Processing dataset {split}")
-        metrics = metric_function(clasp_model, clip_model, dataset)
-        all_metrics[split] = metrics
-    return pd.DataFrame(all_metrics)
-
-
 if __name__ == '__main__':
     description = "Alignment evaluation"
     args: Namespace = parse_eval_args(description)
@@ -80,12 +69,8 @@ if __name__ == '__main__':
     clip_model: CLIPModelFrozen = CLIPModelFrozen()
 
     print("Performing alignment evaluation...")
-    results = apply_metrics_calculation_to_datasets(
-        metric_function=calculate_alignment_metrics,
-        clasp_model=clasp_model,
-        clip_model=clip_model,
-        datasets=datasets
-    )
+    results = apply_scoring_function_to_datasets(scoring_function=calculate_alignment_metrics, datasets=datasets,
+                                                 clasp_model=clasp_model, clip_model=clip_model)
     print(results)
     save_file: Path = args.model_dir / f"alignment_evaluation.csv"
     results.to_csv(save_file)

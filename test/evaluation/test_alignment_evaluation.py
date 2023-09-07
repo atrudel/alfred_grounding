@@ -8,8 +8,8 @@ from _pytest.python_api import approx
 
 from config import REPO_ROOT
 from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from evaluation.alignment_evaluation import calculate_alignment_metrics, _comparative_z_metrics, \
-    apply_metrics_calculation_to_datasets
+from evaluation.clasp.alignment_evaluation import calculate_alignment_metrics, _comparative_z_metrics
+from evaluation.utils import apply_scoring_function_to_datasets
 from grounding.models.base_models.clip import CLIPModelFrozen
 
 from models.clasp import CLASP
@@ -35,7 +35,7 @@ def test_calculate_alignment_accuracy(clasp_model, clip_model):
     dataset = EvalAlfredHLActionDataset(REPO_ROOT / 'alfred/data/json_feat_2.1.0/valid_unseen')
 
     # When
-    result = calculate_alignment_metrics(clasp_model, clip_model, dataset)
+    result = calculate_alignment_metrics(dataset, clasp_model, clip_model)
 
     # Then
     assert result['accuracy'] >= 0.
@@ -83,12 +83,8 @@ def test_apply_metrics_calculation_to_datasets():
     ]
 
     # When
-    result: pd.DataFrame = apply_metrics_calculation_to_datasets(
-        metric_function=dummy_metric_function,
-        clasp_model=clasp_model,
-        clip_model=clip_model,
-        datasets=datasets
-    )
+    result: pd.DataFrame = apply_scoring_function_to_datasets(scoring_function=dummy_metric_function, datasets=datasets,
+                                                              clasp_model=clasp_model, clip_model=clip_model)
 
     # Then
     expected_result = pd.DataFrame({

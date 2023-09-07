@@ -15,17 +15,20 @@ from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_behavior_gener
 from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
 from grounding.models.clasp_modules.encoders.behavior_encoders import BehaviorEncoder
 from grounding.models.clasp_modules.encoders.instruction_encoders import TextEncoder
+from models.base_models.clip import CLIPModelFrozen
 
 
 class CLASP(L.LightningModule):
     def __init__(self, z_size: int, beta_align: float = 1, beta_caption: float = 1, beta_behavior_gen: float = 1,
-                 temperature: float = 0.07, learning_rate: float = 1e-4, weightdecay: float = 0.01):
+                 temperature: float = 0.07, learning_rate: float = 1e-4, weightdecay: float = 0.01,
+                 attention_prefix_tuning=True, alignment_only=False):
         super().__init__()
         self.save_hyperparameters()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
-        self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size)
-        self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size)
+        if not alignment_only:
+            self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size, attention=attention_prefix_tuning)
+            self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size, attention=attention_prefix_tuning)
         self.cross_entropy = nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx) -> Tensor:
@@ -50,11 +53,15 @@ class CLASP(L.LightningModule):
 
     def _forward(self, batch: dict) -> Tensor:
         loss_align: Tensor = self._forward_alignment(batch)
-        loss_caption: Tensor = self._forward_captioning(batch)
-        loss_behavior_gen: Tensor = self._forward_behavior_generation(batch)
-        loss_global: Tensor = self.hparams.beta_align * loss_align + \
-                             self.hparams.beta_caption * loss_caption + \
-                             self.hparams.beta_behavior_gen * loss_behavior_gen
+
+        if self.hparams.alignment_only:
+            loss_global: Tensor = loss_align
+        else:
+            loss_caption: Tensor = self._forward_captioning(batch)
+            loss_behavior_gen: Tensor = self._forward_behavior_generation(batch)
+            loss_global: Tensor = self.hparams.beta_align * loss_align + \
+                                 self.hparams.beta_caption * loss_caption + \
+                                 self.hparams.beta_behavior_gen * loss_behavior_gen
         return loss_global
 
     def _forward_alignment(self, batch) -> Tensor:
@@ -112,7 +119,12 @@ class CLASP(L.LightningModule):
         z = eps * stds + means
         return z
 
-    def evaluate_command_generation_on_all_object_options(self,
+    def generate_behavior(self, instruction_clip_features, image_clip_features: Tensor) -> str:
+        z_instruction = self._encode_instructions(instruction_clip_features).reshape(1, -1)  # [B, 512]
+        predicted = self.behavior_generator.generate(z_instruction, image_clip_features)
+        return predicted
+
+    def evaluate_candidate_commands_on_all_object_options(self,
                                                           action: Action,
                                                           candidate_output_texts: List[str]
                                                           ) -> Tuple[Tensor, Tensor]:
@@ -143,8 +155,23 @@ class CLASP(L.LightningModule):
         output_toks: Tensor = ouput_tokenized["input_ids"]
         return logits, output_toks
 
+    def evaluate_candidate_commands_through_alignment(self,
+                                                      action: Action,
+                                                      candidate_output_texts: List[str]):
+        # Encode instruction
+        z_instruction = self._encode_instructions(action.instruction_clip_features)  # [512]
 
+        # Extract CLIP embeddings for all candidate commands
+        clip: CLIPModelFrozen = CLIPModelFrozen()
+        command_embeds: Tensor = clip.encode_texts(candidate_output_texts)  # [80, 512]
 
-
+        # Encode all candidate commands with the image as different behaviors
+        zs_behavior: Tensor = self._encode_behaviors(  # [80, 512]
+            image_clip_feats=action.image_clip_features.repeat(command_embeds.shape[0], 1),
+            command_clip_feats=command_embeds
+        )
+        # Compute similarity of each behavior with the instruction
+        similarities: Tensor = zs_behavior @ z_instruction  # [80]
+        return similarities
 
 

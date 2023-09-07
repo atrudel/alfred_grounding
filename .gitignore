@@ -11,9 +11,12 @@ alfred/data/full_2.1.0
 exp
 logs
 results
+hparam_search
+lightning_logs
 .vscode
 **/*.egg-info
 build
 venv
 .env
 db.sqlite3
+**.ipynb

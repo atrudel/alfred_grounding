@@ -13,9 +13,9 @@ parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model
 
 parser.add_argument('--name', type=str, help='Name of experiment')
 parser.add_argument('--lr', type=float, default=0.00001, help='Learning rate')
-parser.add_argument('--batch_size', type=int, default=8, help='Batch size')
+parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
 parser.add_argument('--epochs', type=int, default=50, help='Number of epochs to run')
-parser.add_argument('--eval_every', type=int, default=500, help='Nb of update steps between evaluations')
+parser.add_argument('--eval_every', type=int, default=1000, help='Nb of update steps between evaluations')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')
 parser.add_argument('--num_workers', type=int, default=4, help='Number of workers used in the data loaders.')
 parser.add_argument('--gradient_clipping', type=float, default=1., help='Value of the gradient clipping')

@@ -6,11 +6,11 @@ from typing import List
 import pandas as pd
 
 from config import DEVICE
-from evaluation.grounding_capability.grounding_test import build_grounding_tests, GroundingTest
-from evaluation.grounding_capability.utils import get_model_path
+from grounding.evaluation.grounding_capability.grounding_test import build_grounding_tests, GroundingTest
+from grounding.evaluation.grounding_capability.utils import get_model_path
 from grounding.evaluation.grounding_capability.utils import GROUNDING_EVALUATION_FILENAME
 from grounding.evaluation.utils import parse_eval_args
-from models.clasp import CLASP
+from grounding.models.clasp import CLASP
 
 
 if __name__ == '__main__':

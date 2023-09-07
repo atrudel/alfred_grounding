@@ -11,12 +11,12 @@ from torch import Tensor
 from tqdm import tqdm
 
 from config import DEVICE
-from data_processing.action import Action
-from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from evaluation.utils import parse_eval_args, announce_start_evaluation, get_checkpoint_path, load_eval_data, \
+from grounding.data_processing.action import Action
+from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
+from grounding.evaluation.utils import parse_eval_args, announce_start_evaluation, get_checkpoint_path, load_eval_data, \
     apply_scoring_function_to_datasets
-from models.base_models.clip import CLIPModelFrozen
-from models.clasp import CLASP
+from grounding.models.base_models.clip import CLIPModelFrozen
+from grounding.models.clasp import CLASP
 
 
 def calculate_alignment_metrics(dataset: EvalAlfredHLActionDataset,

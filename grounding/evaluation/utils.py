@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from data_processing.datasets_eval import EvalAlfredHLActionDataset
+from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
 
 
 def parse_eval_args(description: str = "Model evaluation routine") -> argparse.Namespace:

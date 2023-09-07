@@ -11,7 +11,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 from torch import nn
 from tqdm import tqdm
 
-from evaluation.scoring_methods.forced_scoring import compute_alignment_metrics_for_ambiguous_situation
+from grounding.evaluation.scoring_methods.forced_scoring import compute_alignment_metrics_for_ambiguous_situation
 from grounding.data_processing.action import Action
 from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
 from grounding.data_processing.object import Object

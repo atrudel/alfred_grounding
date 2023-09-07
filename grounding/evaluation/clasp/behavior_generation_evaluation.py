@@ -8,13 +8,12 @@ from torch import nn
 from tqdm import tqdm
 
 from config import DEVICE
-from data_processing.action import Action
-from data_processing.datasets_eval import EvalAlfredHLActionDataset
-from evaluation.scoring_methods.forced_scoring import compute_forced_metrics_for_single_action
-from evaluation.scoring_methods.generative_scoring import compute_generative_accuracy_for_action
-from evaluation.utils import parse_eval_args, announce_start_evaluation, load_eval_data, get_checkpoint_path, \
+from grounding.data_processing.action import Action
+from grounding.data_processing.datasets_eval import EvalAlfredHLActionDataset
+from grounding.evaluation.scoring_methods.forced_scoring import compute_forced_metrics_for_single_action
+from grounding.evaluation.utils import parse_eval_args, announce_start_evaluation, load_eval_data, get_checkpoint_path, \
     apply_scoring_function_to_datasets, Metrics
-from models.clasp import CLASP
+from grounding.models.clasp import CLASP
 
 
 def evaluate_object_forced_metrics_in_behavior_generation(dataset: EvalAlfredHLActionDataset,

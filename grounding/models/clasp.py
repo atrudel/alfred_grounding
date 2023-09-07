@@ -15,7 +15,7 @@ from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_behavior_gener
 from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_tuning_captioner import PrefixTuningCaptioner
 from grounding.models.clasp_modules.encoders.behavior_encoders import BehaviorEncoder
 from grounding.models.clasp_modules.encoders.instruction_encoders import TextEncoder
-from models.base_models.clip import CLIPModelFrozen
+from grounding.models.base_models.clip import CLIPModelFrozen
 
 
 class CLASP(L.LightningModule):

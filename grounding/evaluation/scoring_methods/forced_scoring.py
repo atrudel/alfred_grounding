@@ -5,7 +5,7 @@ from torch import Tensor, nn as nn
 
 from grounding.data_processing.action import Action
 from grounding.data_processing.object import Object, object_names
-from models.clasp import CLASP
+from grounding.models.clasp import CLASP
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 

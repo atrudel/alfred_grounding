@@ -27,15 +27,8 @@ def objective(trial: Trial) -> float:
     weightdecay = trial.suggest_float("weightdecay", 1e-5, 1e-3, log=True)
     gradient_clipping = trial.suggest_float("gradient_clipping", 1., 10.)
 
-    clasp_model = CLASP(
-        z_size=z_size,
-        beta_align=1,
-        beta_caption=1,
-        beta_behavior_gen=1,
-        temperature=temperature,
-        learning_rate=learning_rate,
-        weightdecay=weightdecay,
-    )
+    clasp_model = CLASP(z_size=z_size, beta_align=1, beta_caption=1, beta_behavior_gen=1, temperature=temperature,
+                        learning_rate=learning_rate, weightdecay=weightdecay)
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=12,
         clasp_mode=True,

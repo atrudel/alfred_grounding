@@ -9,7 +9,7 @@ from transformers.modeling_outputs import CausalLMOutputWithCrossAttentions
 from config import DEVICE
 from grounding.data_processing.action import Action
 from grounding.data_processing.datasets_train import get_train_and_val_dataloaders
-from grounding.models.base_models.prefix_mapper import PrefixMapper
+from grounding.models.base_models.prefix_mapper import AttentionPrefixMapper
 from grounding.training.utils import get_grad_norm
 
 
@@ -28,7 +28,7 @@ class StandalonePrefixTuningGPT2(L.LightningModule):
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         # Prefix mapping network
-        self.prefix_mapper: PrefixMapper = PrefixMapper(
+        self.prefix_mapper: AttentionPrefixMapper = AttentionPrefixMapper(
             input_size=512,  # Resnet feature size
             gpt_embed_size=self.gpt.config.n_embd,  # 768
             k_prefix=self.hparams.prefix_length,

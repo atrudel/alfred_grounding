@@ -115,7 +115,7 @@ class ImageConditionedLLMOnDecoder(nn.Module):
 
         return decoder_input_toks, decoder_input_att_mask, decoder_image_features, output_toks
 
-    def evaluate_command_generation_on_all_object_options(self,
+    def evaluate_candidate_commands_on_all_object_options(self,
                                                           action: Action,
                                                           candidate_output_texts: List[str]
                                                           ) -> Tuple[Tensor, Tensor]:

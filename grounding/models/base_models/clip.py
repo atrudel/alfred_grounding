@@ -1,19 +1,34 @@
 from typing import List, Union
 
 import numpy as np
-
-from config import DEVICE
 from torch import Tensor
 from torch import nn
 from transformers import CLIPTextModelWithProjection, CLIPVisionModelWithProjection, CLIPTokenizerFast, \
     CLIPImageProcessor
+from transformers import logging
+
+from config import DEVICE
+from typing import List, Union
+
+import numpy as np
+from torch import Tensor
+from torch import nn
+from transformers import CLIPTextModelWithProjection, CLIPVisionModelWithProjection, CLIPTokenizerFast, \
+    CLIPImageProcessor
+from transformers import logging
+
+from config import DEVICE
 
 CLIP_EMBEDDING_SIZE = 512
+
+
 
 class CLIPModelFrozen(nn.Module):
     def __init__(self):
         super().__init__()
         clip_checkpoint = "openai/clip-vit-base-patch32"
+
+        logging.set_verbosity_error()  # Silence Huggingface's warnings
 
         # CLIP Text Encoder
         self.tokenizer: CLIPTokenizerFast = CLIPTokenizerFast.from_pretrained(clip_checkpoint)
@@ -22,6 +37,9 @@ class CLIPModelFrozen(nn.Module):
         # CLIP Text Decoder
         self.image_processor: CLIPImageProcessor = CLIPImageProcessor.from_pretrained(clip_checkpoint)
         self.image_encoder: CLIPVisionModelWithProjection = CLIPVisionModelWithProjection.from_pretrained(clip_checkpoint).to(DEVICE)
+
+        logging.set_verbosity_warning()
+
 
         for param in self.text_encoder.parameters():
             param.requires_grad = False
@@ -50,3 +68,7 @@ class CLIPModelFrozen(nn.Module):
 
     def image_embedding_dim(self) -> int:
         return self.image_encoder.config.projection_dim
+
+
+if __name__ == '__main__':
+    clip = CLIPModelFrozen()

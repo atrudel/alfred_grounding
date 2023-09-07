@@ -66,6 +66,20 @@ class GPT2Model(nn.Module):
             output_texts.append(generated_text)
         return output_texts
 
+    def generate_with_prefix_embeddings(self, prefixes: Tensor, max_length: int = 50):
+        output_ids: Tensor = Tensor([[]])
+        input_embeddings = prefixes
+        while output_ids.shape[1] < max_length and self.tokenizer.eos_token_id not in output_ids:
+            with torch.no_grad():
+                output = self.model.forward(
+                    inputs_embeds=input_embeddings,
+                    return_dict=True
+                )
+                last_token_id: Tensor = output.logits[:,-1,:].argmax(dim=-1).unsqueeze(1)
+                output_ids = torch.concat([output_ids, last_token_id], dim=1)
+                input_embeddings = torch.concat([prefixes, self.model.embed_tokens(output_ids)], dim=1)
+
+
     @property
     def embedding_size(self):
         return self.model.config.n_embd
@@ -73,4 +87,3 @@ class GPT2Model(nn.Module):
     def embed_tokens(self, tokens: Tensor) -> Tensor:
         embeddings: nn.Module = self.model.get_input_embeddings()
         return embeddings(tokens.to(DEVICE))
-

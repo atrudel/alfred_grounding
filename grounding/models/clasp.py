@@ -21,13 +21,14 @@ from models.base_models.clip import CLIPModelFrozen
 class CLASP(L.LightningModule):
     def __init__(self, z_size: int, beta_align: float = 1, beta_caption: float = 1, beta_behavior_gen: float = 1,
                  temperature: float = 0.07, learning_rate: float = 1e-4, weightdecay: float = 0.01,
-                 attention_prefix_tuning=True):
+                 attention_prefix_tuning=True, alignment_only=False):
         super().__init__()
         self.save_hyperparameters()
         self.instruction_encoder: TextEncoder = TextEncoder(z_size=z_size)
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
-        self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size, attention=attention_prefix_tuning)
-        self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size, attention=attention_prefix_tuning)
+        if not alignment_only:
+            self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size, attention=attention_prefix_tuning)
+            self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size, attention=attention_prefix_tuning)
         self.cross_entropy = nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx) -> Tensor:
@@ -52,11 +53,15 @@ class CLASP(L.LightningModule):
 
     def _forward(self, batch: dict) -> Tensor:
         loss_align: Tensor = self._forward_alignment(batch)
-        loss_caption: Tensor = self._forward_captioning(batch)
-        loss_behavior_gen: Tensor = self._forward_behavior_generation(batch)
-        loss_global: Tensor = self.hparams.beta_align * loss_align + \
-                             self.hparams.beta_caption * loss_caption + \
-                             self.hparams.beta_behavior_gen * loss_behavior_gen
+
+        if self.hparams.alignment_only:
+            loss_global: Tensor = loss_align
+        else:
+            loss_caption: Tensor = self._forward_captioning(batch)
+            loss_behavior_gen: Tensor = self._forward_behavior_generation(batch)
+            loss_global: Tensor = self.hparams.beta_align * loss_align + \
+                                 self.hparams.beta_caption * loss_caption + \
+                                 self.hparams.beta_behavior_gen * loss_behavior_gen
         return loss_global
 
     def _forward_alignment(self, batch) -> Tensor:

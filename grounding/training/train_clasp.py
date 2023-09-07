@@ -28,15 +28,23 @@ parser.add_argument('--z_size', type=int, default=512, help='Size of the z embed
 parser.add_argument('--beta_caption', type=float, default=1., help='Coefficient for the captioning loss component.')
 parser.add_argument('--beta_behav_gen', type=float, default=1., help='Coefficient for the behavior generation loss component.')
 parser.add_argument('--temperature', type=float, default=0.07, help='Temperature use in the contrastive loss.')
+parser.add_argument('--alignment_only', action='store_true', help='Only train the alignment task.')
 
 
 def launch_training(args: Namespace):
     if DEVICE == "cuda":
         mp.set_start_method("spawn")
 
-    clasp_model = CLASP(z_size=args.z_size, beta_align=1, beta_caption=args.beta_caption,
-                        beta_behavior_gen=args.beta_behav_gen, temperature=args.temperature, learning_rate=args.lr,
-                        weightdecay=args.weightdecay)
+    clasp_model = CLASP(z_size=args.z_size,
+                        beta_align=1,
+                        beta_caption=args.beta_caption,
+                        beta_behavior_gen=args.beta_behav_gen,
+                        temperature=args.temperature,
+                        learning_rate=args.lr,
+                        weightdecay=args.weightdecay,
+                        attention_prefix_tuning=True,
+                        alignment_only=args.alignment_only
+                        )
     train_dataloader, val_dataloader = get_train_and_val_dataloaders(
         batch_size=args.batch_size,
         clasp_mode=True,

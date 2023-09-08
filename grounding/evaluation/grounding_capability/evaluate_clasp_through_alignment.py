@@ -24,7 +24,7 @@ if __name__ == '__main__':
     grounding_tests: List[GroundingTest] = build_grounding_tests()
 
     print(f"Loading model fom {model_path}...")
-    model = CLASP.load_from_checkpoint(model_path, map_location=DEVICE, attention_prefix_tuning=False)
+    model = CLASP.load_from_checkpoint(model_path, map_location=DEVICE)
     model.eval()
 
     for grounding_test in grounding_tests:

@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser(description='Training of a CLASP-inspired model
 
 parser.add_argument('--name', type=str, help='Name of experiment')
 parser.add_argument('--lr', type=float, default=0.00001, help='Learning rate')
-parser.add_argument('--batch_size', type=int, default=12, help='Batch size')
+parser.add_argument('--batch_size', type=int, default=8, help='Batch size')
 parser.add_argument('--epochs', type=int, default=50, help='Number of epochs to run')
 parser.add_argument('--eval_every', type=float, default=0.10, help='Interval between validations as a fraction of the epoch.')
 parser.add_argument('--weightdecay', type=float, default=1e-4, help='weight decay')

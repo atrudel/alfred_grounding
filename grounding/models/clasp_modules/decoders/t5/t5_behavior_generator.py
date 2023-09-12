@@ -4,6 +4,7 @@ import torch
 from torch import Tensor, nn
 from transformers import T5ForConditionalGeneration, BatchEncoding, T5Tokenizer
 
+from config import DEVICE
 from grounding.models.clasp_modules.decoders.base_classes import BehaviorGeneratingDecoder
 from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
 
@@ -11,10 +12,10 @@ from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
 class T5BehaviorGenerator(BehaviorGeneratingDecoder):
     def __init__(self ,z_size: int):
         super().__init__()
-        self.t5: T5ForConditionalGeneration = T5ForConditionalGeneration.from_pretrained('t5-small', return_dict=True)
+        self.t5: T5ForConditionalGeneration = T5ForConditionalGeneration.from_pretrained('t5-small', return_dict=True).to(DEVICE)
         self.tokenizer: T5Tokenizer = T5Tokenizer.from_pretrained('t5-small')
-        self.image_fc: nn.Module = nn.Linear(CLIP_EMBEDDING_SIZE, self.t5.config.d_model)
-        self.z_fc: nn.Module = nn.Linear(z_size, self.t5.config.d_model)
+        self.image_fc: nn.Module = nn.Linear(CLIP_EMBEDDING_SIZE, self.t5.config.d_model).to(DEVICE)
+        self.z_fc: nn.Module = nn.Linear(z_size, self.t5.config.d_model).to(DEVICE)
 
     def forward(self, z: Tensor,
                 images_clip_encoded: Tensor,
@@ -24,8 +25,8 @@ class T5BehaviorGenerator(BehaviorGeneratingDecoder):
         prompt = torch.cat([z_prompt, image_prompt], dim=1)  # [B, 2, 512]
         labels: Tensor = self._prepare_labels(command_labels)  # [B, L]
         output = self.t5(
-            inputs_embeds=prompt,
-            labels=labels
+            inputs_embeds=prompt.to(DEVICE),
+            labels=labels.to(DEVICE)
         )
         return output
 

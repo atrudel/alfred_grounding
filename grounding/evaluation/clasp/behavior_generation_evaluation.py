@@ -64,7 +64,7 @@ def perform_complete_behavior_generation_evaluation(model: nn.Module,
     log_directory: Path = directory / 'behavior_generation_evaluation'
     os.makedirs(log_directory, exist_ok=True)
     print("1/3 Performing forced accuracy and mrr for object selection in behavior generation...")
-    with open(log_directory / 'object_forced_metrics.log') as f:
+    with open(log_directory / 'object_forced_metrics.log', 'w') as f:
         object_forced_metrics: pd.DataFrame = apply_scoring_function_to_datasets(
             scoring_function=evaluate_object_forced_metrics_in_behavior_generation,
             datasets=datasets,

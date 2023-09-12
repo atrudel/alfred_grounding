@@ -152,7 +152,7 @@ class CLASP(L.LightningModule):
             )
         logits: Tensor = output.logits
 
-        ouput_tokenized: BatchEncoding = self.behavior_generator.gpt.tokenizer(
+        ouput_tokenized: BatchEncoding = self.behavior_generator.tokenizer(
             candidate_output_texts, return_tensors='pt',
             padding="max_length", max_length=logits.shape[1]
         )
@@ -177,5 +177,3 @@ class CLASP(L.LightningModule):
         # Compute similarity of each behavior with the instruction
         similarities: Tensor = zs_behavior @ z_instruction  # [80]
         return similarities
-
-

@@ -5,7 +5,7 @@ from torch import Tensor, nn
 from transformers import T5ForConditionalGeneration, BatchEncoding, T5Tokenizer
 
 from grounding.models.clasp_modules.decoders.base_classes import BehaviorGeneratingDecoder
-from models.base_models.clip import CLIP_EMBEDDING_SIZE
+from grounding.models.base_models.clip import CLIP_EMBEDDING_SIZE
 
 
 class T5BehaviorGenerator(BehaviorGeneratingDecoder):

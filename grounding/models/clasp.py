@@ -16,6 +16,7 @@ from grounding.models.clasp_modules.decoders.prefix_tuning.prefix_tuning_caption
 from grounding.models.clasp_modules.encoders.behavior_encoders import BehaviorEncoder
 from grounding.models.clasp_modules.encoders.instruction_encoders import TextEncoder
 from grounding.models.base_models.clip import CLIPModelFrozen
+from grounding.models.clasp_modules.decoders.t5.t5_behavior_generator import T5BehaviorGenerator
 
 
 class CLASP(L.LightningModule):
@@ -28,7 +29,9 @@ class CLASP(L.LightningModule):
         self.behavior_encoder: BehaviorEncoder = BehaviorEncoder(z_size=z_size)
         if not alignment_only:
             self.captioner: CaptioningDecoder = PrefixTuningCaptioner(z_size=z_size, attention=attention_prefix_tuning)
-            self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size, attention=attention_prefix_tuning)
+            # self.behavior_generator: BehaviorGeneratingDecoder = PrefixTuningBehaviorGenerator(z_size, attention=attention_prefix_tuning)
+            self.behavior_generator: BehaviorGeneratingDecoder = T5BehaviorGenerator(z_size=z_size)
+
         self.cross_entropy = nn.CrossEntropyLoss()
 
     def training_step(self, batch, batch_idx) -> Tensor:
@@ -57,12 +60,13 @@ class CLASP(L.LightningModule):
         if self.hparams.alignment_only:
             loss_global: Tensor = loss_align
         else:
-            loss_caption: Tensor = self._forward_captioning(batch)
+            # loss_caption: Tensor = self._forward_captioning(batch)
             loss_behavior_gen: Tensor = self._forward_behavior_generation(batch)
-            loss_global: Tensor = self.hparams.beta_align * loss_align + \
-                                 self.hparams.beta_caption * loss_caption + \
-                                 self.hparams.beta_behavior_gen * loss_behavior_gen
-        return loss_global
+            # loss_global: Tensor = self.hparams.beta_align * loss_align + \
+            #                      self.hparams.beta_behavior_gen * loss_behavior_gen
+                                 # self.hparams.beta_caption * loss_caption + \
+        # return loss_global
+        return loss_behavior_gen
 
     def _forward_alignment(self, batch) -> Tensor:
         z_instruction: Tensor = self._encode_instructions(batch["instruction_clip_feats"])

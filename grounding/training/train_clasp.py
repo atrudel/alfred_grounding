@@ -25,8 +25,8 @@ parser.add_argument('--overfit', action='store_true', help='Overfit a small port
 parser.add_argument('--profiler', action='store_true', help='Use a profiler to find bottlenecks in the code.')
 
 parser.add_argument('--z_size', type=int, default=512, help='Size of the z embedding.')
-parser.add_argument('--beta_caption', type=float, default=0.25, help='Coefficient for the captioning loss component.')
-parser.add_argument('--beta_behav_gen', type=float, default=0.25, help='Coefficient for the behavior generation loss component.')
+parser.add_argument('--beta_caption', type=float, default=0.4, help='Coefficient for the captioning loss component.')
+parser.add_argument('--beta_behav_gen', type=float, default=0.4, help='Coefficient for the behavior generation loss component.')
 parser.add_argument('--temperature', type=float, default=0.07, help='Temperature use in the contrastive loss.')
 parser.add_argument('--alignment_only', action='store_true', help='Only train the alignment task.')
 
